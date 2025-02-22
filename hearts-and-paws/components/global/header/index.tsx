@@ -14,8 +14,8 @@ type Props = {};
 
 const Header = (props: Props) => {
   return (
-    <header className="bg-white shadow-md">
-      <div className="container mx-auto flex justify-between items-center py-2 px-4">
+    <header className="bg-white shadow-md sticky">
+      <div className="container mx-auto flex justify-between items-center h-18 px-4">
         <div className="flex items-center space-x-3">
           <Image width={50} height={50} src="/Logo-sub.png" alt="logo" />
           {/* <h1 className={`${acme.className} text-primary text-3xl pl-2`}>Hearts & <span className="block">Paws</span> </h1> */}
@@ -28,7 +28,7 @@ const Header = (props: Props) => {
             <span className="text-[#2E256F] -mt-2">Paws</span>
           </h1>
 
-          <div className="flex space-x-1">
+          <div className="hidden space-x-8 md:flex">
             <Image
               width={25}
               height={25}
@@ -74,14 +74,21 @@ const Header = (props: Props) => {
           </a>
         </nav>
         <div className="hidden md:flex items-center space-x-4">
-          <Button className="flex items-center border-2 border-primary bg-white text-primary hover:bg-purple-100 rounded-full">
+          {/* <Button className="flex items-center border-2 border-primary bg-white text-primary hover:bg-purple-100 rounded-full">
             <Bell size={50} className="stroke-primary fill-white " />
-          </Button>
+          </Button> */}
 
-          <Button className="text-[#5D4FC4] flex gap-x-2 border-primary bg-white border-2 rounded-full p-2 m-2  hover:bg-purple-100">
+          {/* <Button className="text-[#5D4FC4] flex gap-x-2 border-primary bg-white border-2 rounded-full p-2 m-2  hover:bg-purple-100">
             <UserCircle />
             Login | Register
+          </Button> */}
+          <Button className="bg-[#675bc8] hover:bg-[#5d4fc4] rounded-full ">
+            <Bell size={40} />
           </Button>
+
+          <Button className="bg-[#675bc8] hover:bg-[#5d4fc4] rounded-full p-2">
+            <UserCircle />
+          Login | Register</Button>
         </div>
       </div>
     </header>

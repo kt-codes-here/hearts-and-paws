@@ -1,3 +1,4 @@
+import Footer from "@/components/global/footer";
 import Header from "@/components/global/header";
 import Image from "next/image";
 
@@ -98,7 +99,12 @@ export default function Home() {
     //     </a>
     //   </footer>
     // </div>
+    <div>
     <Header/>
-    
+    <div>
+      <p>Home page</p>
+    </div>
+    <Footer/>
+    </div>
   );
 }
