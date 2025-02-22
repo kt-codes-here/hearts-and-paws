@@ -104,7 +104,7 @@ export default function Home() {
     <div>
       <p>Home page</p>
     </div>
-    <Footer/>
+    
     </div>
   );
 }
