@@ -91,7 +91,7 @@ export default function Home() {
     <PetList />
     <PetServiceStatic/>
     </div>
-    <Footer/>
+    
     </div>
   );
 }
