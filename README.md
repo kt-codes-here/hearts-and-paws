@@ -1,64 +1,67 @@
-# hearts-and-paws
-Development Workflow
+# Hearts and Paws
+
+## Development Workflow
 
 Before implementing a new feature, follow these steps:
 
-Create a New Branch
+1. **Create a New Branch**
 
-Always create a new branch from dev before starting any new feature.
+   - Always create a new branch from `dev` before starting any new feature.
+   - Use the following command:
+     ```sh
+     git checkout dev
+     git pull origin dev
+     git checkout -b feature-branch-name
+     ```
 
-Use the following command:
+2. **Implement Your Changes**
 
-git checkout dev
-git pull origin dev
-git checkout -b feature-branch-name
+   - Work on your feature in the new branch.
+   - Make sure to test your changes locally.
 
-Implement Your Changes
+3. **Commit and Push**
 
-Work on your feature in the new branch.
+   - Once done, commit your changes:
+     ```sh
+     git add .
+     git commit -m "Implemented new feature"
+     git push origin feature-branch-name
+     ```
 
-Make sure to test your changes locally.
+4. **Create a Pull Request (PR)**
 
-Commit and Push
+   - Open a PR to merge your changes into `dev`.
+   - Add a meaningful description of the changes.
+   - Request reviews from the team.
 
-Once done, commit your changes:
-
-git add .
-git commit -m "Implemented new feature"
-git push origin feature-branch-name
-
-Create a Pull Request (PR)
-
-Open a PR to merge your changes into dev.
-
-Add a meaningful description of the changes.
-
-Request reviews from the team.
-
-Local Development Setup
+## Local Development Setup
 
 Follow these steps to set up the project locally:
 
-Clone the Repository
+1. **Clone the Repository**
 
-git clone <repo-url>
-cd hearts-and-paws
+   ```sh
+   git clone <repo-url>
+   cd hearts-and-paws
+   ```
 
-Install Dependencies
+2. **Install Dependencies**
 
-npm install
+   ```sh
+   npm install
+   ```
 
-Run the Development Server
+3. **Run the Development Server**
 
-npm run dev
+   ```sh
+   npm run dev
+   ```
 
-The project should now be running at http://localhost:3000.
+   The project should now be running at `http://localhost:3000`.
 
-Additional Notes
+## Additional Notes
 
-Always pull the latest changes from dev before starting a new feature.
-
-Ensure all code follows the project's linting and formatting rules.
-
-Write meaningful commit messages and PR descriptions.
+- Always pull the latest changes from `dev` before starting a new feature.
+- Ensure all code follows the project's linting and formatting rules.
+- Write meaningful commit messages and PR descriptions.
 
