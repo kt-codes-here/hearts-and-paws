@@ -51,7 +51,20 @@ Follow these steps to set up the project locally:
    npm install
    ```
 
-3. **Run the Development Server**
+3. **Set Up Prisma and Database**
+
+   - Make sure you have PostgreSQL installed and running.
+   - Set up your environment variables in `.env`:
+     ```sh
+     DATABASE_URL="postgresql://user:password@localhost:5432/database_name"
+     ```
+   - Run Prisma commands to set up the database:
+     ```sh
+     npx prisma migrate dev --name init
+     npx prisma generate
+     ```
+
+4. **Run the Development Server**
 
    ```sh
    npm run dev
@@ -63,5 +76,5 @@ Follow these steps to set up the project locally:
 
 - Always pull the latest changes from `dev` before starting a new feature.
 - Ensure all code follows the project's linting and formatting rules.
+- Run Prisma migrations when modifying the database schema.
 - Write meaningful commit messages and PR descriptions.
-
