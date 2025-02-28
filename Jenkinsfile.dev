@@ -16,7 +16,7 @@ pipeline {
             steps {
                 script {
                     echo "Pulling latest changes from branch-dev"
-                    bat 'git pull origin dev-branch'
+                    bat 'git pull origin branch-dev'
                 }
             }
         }
