@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export function PetCard({ name, location, gender, breed, age, size, image, isNew }:{ 
+export function PetCard({ name, location, gender, breed, age, size, image, isNew = false }:{ 
     name: string; 
     location: string; 
     gender: string; 
