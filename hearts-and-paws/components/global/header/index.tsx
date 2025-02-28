@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton, SignInButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { UserButton, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { Acme } from "next/font/google";
