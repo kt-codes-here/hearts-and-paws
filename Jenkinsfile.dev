@@ -3,11 +3,12 @@ pipeline {
 
     environment {
         NODE_VERSION = '22.14.0'
-        DATABASE_URL = credentials('DATABASE_URL') 
+        DATABASE_URL = credentials('POSTGRES_DATABASE_URL')  // Secure database URL
+        NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'  // Example public API
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
-        APP_NAME = 'hearts-and-paws'
         DEPLOY_DIR = '/var/www/hearts-and-paws'
+        APP_NAME = 'hearts-and-paws'
     }
 
     stages {
@@ -16,6 +17,19 @@ pipeline {
                 script {
                     echo "Pulling latest changes from dev-branch"
                     sh 'git pull origin dev-branch'
+                }
+            }
+        }
+
+        stage('Set Up Environment') {
+            steps {
+                script {
+                    echo "Creating .env file..."
+                    sh '''
+                    echo "DATABASE_URL=${DATABASE_URL}" > .env
+                    echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" >> .env
+                    cat .env  # Debugging: Show the env file (remove if needed)
+                    '''
                 }
             }
         }
@@ -69,19 +83,11 @@ pipeline {
             }
         }
 
-        stage('Deploy Application') {
+        stage('Start Application (Temporary for Local Server)') {
             steps {
                 script {
-                    echo "Deploying application to ${DEPLOY_DIR}..."
-                    sh '''
-                    rsync -av --exclude='.git' --exclude='node_modules' . $DEPLOY_DIR
-
-                    cd $DEPLOY_DIR
-
-                    pm2 delete hearts-and-paws || true
-                    pm2 start npm --name "hearts-and-paws" -- start
-                    pm2 save
-                    '''
+                    echo "Starting Next.js server..."
+                    sh 'nohup npm start > nextjs.log 2>&1 &'
                 }
             }
         }
