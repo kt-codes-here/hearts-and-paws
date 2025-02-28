@@ -15,7 +15,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 script {
-                    echo "Pulling latest changes from dev-branch"
+                    echo "Pulling latest changes from branch-dev"
                     bat 'git pull origin dev-branch'
                 }
             }
