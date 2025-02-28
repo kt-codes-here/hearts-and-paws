@@ -3,10 +3,10 @@ pipeline {
 
     environment {
         NODE_VERSION = '22.14.0'
-        DATABASE_URL = credentials('DATABASE_URL')  // Secure database URL
-        NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'  // Example public API
+        DATABASE_URL = credentials('DATABASE_URL')
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
+        NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'
         DEPLOY_DIR = '/var/www/hearts-and-paws'
         APP_NAME = 'hearts-and-paws'
     }
@@ -26,7 +26,10 @@ pipeline {
                 script {
                     echo "Creating .env file..."
                     sh '''
+                    cd hearts-and-paws
                     echo "DATABASE_URL=${DATABASE_URL}" > .env
+                    echo "CLERK_SECRET_KEY=${CLERK_SECRET_KEY}" > .env
+                    echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" > .env
                     echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" >> .env
                     cat .env  # Debugging: Show the env file (remove if needed)
                     '''
@@ -51,7 +54,10 @@ pipeline {
             steps {
                 script {
                     echo "Installing dependencies..."
-                    sh 'npm install'
+                    sh '''
+                    cd hearts-and-paws
+                    npm install
+                    '''
                 }
             }
         }
@@ -60,7 +66,10 @@ pipeline {
             steps {
                 script {
                     echo "Generating Prisma Client..."
-                    sh 'npx prisma generate'
+                    sh '''
+                    cd hearts-and-paws
+                    npx prisma generate
+                    '''
                 }
             }
         }
@@ -69,7 +78,10 @@ pipeline {
             steps {
                 script {
                     echo "Applying Prisma Migrations..."
-                    sh 'npx prisma migrate deploy'
+                    sh '''
+                    cd hearts-and-paws
+                    npx prisma migrate deploy
+                    '''
                 }
             }
         }
@@ -78,16 +90,22 @@ pipeline {
             steps {
                 script {
                     echo "Building Next.js app..."
-                    sh 'npm run build'
+                    sh '''
+                    cd hearts-and-paws
+                    npm run build
+                    '''
                 }
             }
         }
 
-        stage('Start Application (Temporary for Local Server)') {
+        stage('Start Application') {
             steps {
                 script {
                     echo "Starting Next.js server..."
-                    sh 'nohup npm start > nextjs.log 2>&1 &'
+                    sh '''
+                    cd hearts-and-paws
+                    nohup npm start > nextjs.log 2>&1 &
+                    '''
                 }
             }
         }
