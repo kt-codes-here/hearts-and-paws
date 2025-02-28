@@ -17,6 +17,7 @@ export const pets = [
       age: "2 years",
       size: "Small",
       image: "/sample.png",
+      isNew: true,
     },
     {
       name: "Magie",
@@ -26,6 +27,7 @@ export const pets = [
       age: "27 months",
       size: "Medium",
       image: "/sample.png",
+      isNew: false,
     },
     {
       name: "Felix",
@@ -35,5 +37,6 @@ export const pets = [
       age: "9 months",
       size: "Small",
       image: "/sample.png",
+      isNew: false,
     },
   ];

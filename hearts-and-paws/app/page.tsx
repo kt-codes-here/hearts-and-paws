@@ -145,20 +145,3 @@ export default function Home() {
   );
 }
 
-// ✅ Move user-related UI to a separate client component
-function UserProfile() {
-  const { user } = useUser();
-
-  return (
-    <div className="flex flex-col items-center">
-      {user?.imageUrl && (
-        <Image src={user.imageUrl} alt="User Profile" width={100} height={100} className="rounded-full border" />
-      )}
-      <h3 className="text-2xl mt-2">{user?.firstName} {user?.lastName}</h3>
-      <p className="text-gray-600">{user?.emailAddresses[0]?.emailAddress}</p>
-      <div className="mt-4">
-        <UserButton afterSignOutUrl="/" />
-      </div>
-    </div>
-  );
-}

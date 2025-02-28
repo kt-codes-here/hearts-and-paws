@@ -25,7 +25,7 @@ const cardData = [
   }
 ];
 
-function InfoCard({ title, description, icon }) {
+function InfoCard({ title, description, icon }:{title:string, description:string, icon:string}) {
   return (
     <div className="border-2 border-cardBackground rounded-lg shadow-md p-4">
       <div className='flex justify-start'>
