@@ -1,28 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowRight,
-  Facebook,
   FacebookIcon,
   InstagramIcon,
-  Linkedin,
   LinkedinIcon,
-  LocateIcon,
   Mail,
   MailIcon,
-  MapIcon,
   MapPinIcon,
-  MessageCircle,
   Phone,
-  Pin,
-  Search,
   TwitterIcon,
 } from "lucide-react";
 import React from "react";
 
-type Props = {};
-
-const Footer = (props: Props) => {
+const Footer = () => {
   return (
     <footer className="bg-[#F9F9F9]">
       <div className="container px-4 py-8 mx-auto">

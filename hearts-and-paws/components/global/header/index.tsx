@@ -10,7 +10,6 @@ import { Bell } from "lucide-react";
 const acme = Acme({ weight: "400", subsets: ["latin"], display: "swap" });
 
 const Header = () => {
-  const { user } = useUser();
 
   return (
     <header className="bg-white shadow-md sticky z-10 top-0">

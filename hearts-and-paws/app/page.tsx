@@ -1,6 +1,5 @@
 "use client"; // Ensure this component runs on the client side
 
-import Footer from "@/components/global/footer";
 import Header from "@/components/global/header";
 import PetList from "@/components/ui/petList"; 
 import Image from "next/image";
