@@ -1,7 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export function PetCard({ name, location, gender, breed, age, size, image, isNew }) {
+export function PetCard({ name, location, gender, breed, age, size, image, isNew }:{ 
+    name: string; 
+    location: string; 
+    gender: string; 
+    breed: string; 
+    age: string; 
+    size: string; 
+    image: string; 
+    isNew?: boolean; 
+  }) {
     return (
       <div className="bg-white shadow-lg rounded-lg p-4 w-80 relative">
         {isNew && <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">New</div>}
