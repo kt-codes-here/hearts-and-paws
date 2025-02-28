@@ -5,7 +5,7 @@ pipeline {
         NODE_VERSION = '22.14.0'
         DATABASE_URL = credentials('DATABASE_URL')
         NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'
-	NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
         DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
         APP_NAME = 'hearts-and-paws'
@@ -28,10 +28,10 @@ pipeline {
                     bat """
                     cd hearts-and-paws
                     echo DATABASE_URL=${DATABASE_URL} > .env
-                    echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} > .env
-                    echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} > .env
+                    echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} >> .env
+                    echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} >> .env
                     echo NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} >> .env
-                    type .env  // Show the .env file for debugging
+                    type .env
                     """
                 }
             }
