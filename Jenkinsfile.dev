@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NODE_VERSION = '22.14.0'
-        DATABASE_URL = credentials('POSTGRES_DATABASE_URL')  // Secure database URL
+        DATABASE_URL = credentials('DATABASE_URL')  // Secure database URL
         NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'  // Example public API
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
