@@ -1,20 +1,96 @@
 pipeline {
     agent any
+
+    environment {
+        NODE_VERSION = '22.14.0'
+        DATABASE_URL = credentials('POSTGRES_DATABASE_URL')  // Secure database URL
+        APP_NAME = 'hearts-and-paws'
+        DEPLOY_DIR = '/var/www/hearts-and-paws'
+    }
+
     stages {
-        stage('Build') {
+        stage('Checkout Code') {
             steps {
-                echo 'Building project...'
+                script {
+                    echo "Pulling latest changes from dev-branch"
+                    sh 'git pull origin dev-branch'
+                }
             }
         }
-        stage('Test') {
+
+        stage('Install Node.js') {
             steps {
-                echo 'Running tests...'
+                script {
+                    echo "Ensuring Node.js 22.14.0 is installed..."
+                    sh '''
+                    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+                    sudo apt install -y nodejs
+                    '''
+                    sh 'node -v && npm -v'
+                }
             }
         }
-        stage('Deploy') {
+
+        stage('Install Dependencies') {
             steps {
-                echo 'Deploying to DEV environment...'
+                script {
+                    echo "Installing dependencies..."
+                    sh 'npm install'
+                }
             }
+        }
+
+        stage('Generate Prisma Client') {
+            steps {
+                script {
+                    echo "Generating Prisma Client..."
+                    sh 'npx prisma generate'
+                }
+            }
+        }
+
+        stage('Run Prisma Migrations') {
+            steps {
+                script {
+                    echo "Applying Prisma Migrations..."
+                    sh 'npx prisma migrate deploy'
+                }
+            }
+        }
+
+        stage('Build Next.js') {
+            steps {
+                script {
+                    echo "Building Next.js app..."
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                script {
+                    echo "Deploying application to ${DEPLOY_DIR}..."
+                    sh '''
+                    rsync -av --exclude='.git' --exclude='node_modules' . $DEPLOY_DIR
+
+                    cd $DEPLOY_DIR
+
+                    pm2 delete hearts-and-paws || true
+                    pm2 start npm --name "hearts-and-paws" -- start
+                    pm2 save
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment to DEV successful!"
+        }
+        failure {
+            echo "❌ Deployment to DEV failed!"
         }
     }
 }
