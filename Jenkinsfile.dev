@@ -125,14 +125,14 @@ pipeline {
             slackSend(channel: "${SLACK_CHANNEL}", 
                       message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                       color: 'good', 
-                      teamDomain: 'your-slack-team')
+                      teamDomain: 'cs691-CRN23318-Tue')
         }
         failure {
             echo "❌ Deployment to DEV failed!"
             slackSend(channel: "${SLACK_CHANNEL}", 
                       message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                       color: 'danger', 
-                      teamDomain: 'your-slack-team')
+                      teamDomain: 'cs691-CRN23318-Tue')
         }
     }
 }
