@@ -42,18 +42,21 @@ pipeline {
             }
         }
 
-        stage('Install Node.js') {
-            steps {
-                script {
-                    echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
-                    bat """
-                    nvm use ${NODE_VERSION} || exit /b 1
-                    node -v || exit /b 1
-                    npm -v || exit /b 1
-                    """
-                }
-            }
+      stage('Install Node.js') {
+    steps {
+        script {
+            echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
+            bat """
+            set NVM_DIR=C:\\Users\\Administrator\\AppData\\Roaming\\nvm
+            set NODEJS_HOME=%NVM_DIR%\\v${NODE_VERSION}
+            set PATH=%NODEJS_HOME%;%PATH%
+            node -v || exit /b 1
+            npm -v || exit /b 1
+            """
         }
+    }
+}
+
 
         stage('Install Dependencies') {
             steps {
