@@ -9,7 +9,7 @@ pipeline {
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
         DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
         APP_NAME = 'Slack-notifaction-service'
-        SLACK_CHANNEL = 'team4'
+        SLACK_CHANNEL = credentials('SLACK_CHANNEL')
         SLACK_CREDENTIALS_ID = 'https://hooks.slack.com/services/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'
     }
 
@@ -122,7 +122,7 @@ pipeline {
     post {
     success {
         echo "✅ Deployment to DEV successful!"
-        slackSend(channel: "#team4", 
+        slackSend(channel: ${SLACK_CHANNEL}, 
                   message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                   color: 'good', 
                   botUser: true, 
@@ -130,7 +130,7 @@ pipeline {
     }
     failure {
         echo "❌ Deployment to DEV failed!"
-        slackSend(channel: "#team4", 
+        slackSend(channel: ${SLACK_CHANNEL}, 
                   message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                   color: 'danger', 
                   botUser: true, 
