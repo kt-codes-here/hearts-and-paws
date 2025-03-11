@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import * as Accordion from "@radix-ui/react-accordion";
+import Image from "next/image";
 import { roleNames } from "@/constant/utils";
 
 export default function RehomerDashboard() {
@@ -134,11 +135,13 @@ export default function RehomerDashboard() {
                     {item.pet.images && item.pet.images.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {item.pet.images.map((img: string, index: number) => (
-                          <img
+                          <Image
                             key={index}
                             src={img}
                             alt={`Pet image ${index + 1}`}
-                            className="w-20 h-20 object-cover rounded"
+                            width={80}
+                            height={80}
+                            className="object-cover rounded"
                           />
                         ))}
                       </div>
