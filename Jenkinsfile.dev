@@ -122,7 +122,7 @@ pipeline {
     post {
     success {
         echo "✅ Deployment to DEV successful!"
-        slackSend(channel: ${SLACK_CHANNEL}, 
+        slackSend(channel: "${SLACK_CHANNEL}", 
                   message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                   color: 'good', 
                   botUser: true, 
@@ -130,7 +130,7 @@ pipeline {
     }
     failure {
         echo "❌ Deployment to DEV failed!"
-        slackSend(channel: ${SLACK_CHANNEL}, 
+        slackSend(channel: "${SLACK_CHANNEL}", 
                   message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
                   color: 'danger', 
                   botUser: true, 
