@@ -13,6 +13,8 @@
 # testing
 /coverage
 
+#keys
+/keys
 # next.js
 /.next/
 /out/

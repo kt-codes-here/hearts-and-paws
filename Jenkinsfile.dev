@@ -9,14 +9,20 @@ pipeline {
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
         DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
         APP_NAME = 'hearts-and-paws'
+        SLACK_CHANNEL = 'team4'
+        SLACK_CREDENTIALS_ID = 'https://hooks.slack.com/services/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'
     }
 
     stages {
         stage('Checkout Code') {
             steps {
                 script {
-                    echo "Pulling latest changes from branch-dev"
-                    bat 'git pull origin branch-dev'
+                    echo "📥 Pulling latest changes from branch-dev"
+                    bat """
+                    cd ${DEPLOY_DIR}
+                    git reset --hard HEAD
+                    git pull origin branch-dev
+                    """
                 }
             }
         }
@@ -24,23 +30,26 @@ pipeline {
         stage('Set Up Environment') {
             steps {
                 script {
-                    echo "Creating .env file..."
+                    echo "⚙️ Creating .env file..."
                     bat """
-                    cd hearts-and-paws
+                    cd ${DEPLOY_DIR}
                     echo DATABASE_URL=${DATABASE_URL} > .env
                     echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} >> .env
                     echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} >> .env
                     echo NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} >> .env
+                    echo "✅ .env file created successfully!"
                     type .env
                     """
                 }
             }
         }
+
         stage('Install Node.js') {
             steps {
                 script {
-                    echo "Ensuring Node.js 22.14.0 is installed..."
+                    echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
                     bat """
+                    nvm use ${NODE_VERSION} || exit /b 1
                     node -v
                     npm -v
                     """
@@ -51,10 +60,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo "Installing dependencies..."
+                    echo "📦 Installing dependencies..."
                     bat """
-                    cd hearts-and-paws
-                    npm install
+                    cd ${DEPLOY_DIR}
+                    npm install --force
                     """
                 }
             }
@@ -63,10 +72,10 @@ pipeline {
         stage('Generate Prisma Client') {
             steps {
                 script {
-                    echo "Generating Prisma Client..."
+                    echo "🛠️ Generating Prisma Client..."
                     bat """
-                    cd hearts-and-paws
-                    npx prisma generate
+                    cd ${DEPLOY_DIR}
+                    npx prisma generate || exit /b 1
                     """
                 }
             }
@@ -75,10 +84,10 @@ pipeline {
         stage('Run Prisma Migrations') {
             steps {
                 script {
-                    echo "Applying Prisma Migrations..."
+                    echo "📜 Applying Prisma Migrations..."
                     bat """
-                    cd hearts-and-paws
-                    npx prisma migrate deploy
+                    cd ${DEPLOY_DIR}
+                    npx prisma migrate deploy || exit /b 1
                     """
                 }
             }
@@ -87,10 +96,10 @@ pipeline {
         stage('Build Next.js') {
             steps {
                 script {
-                    echo "Building Next.js app..."
+                    echo "🏗️ Building Next.js app..."
                     bat """
-                    cd hearts-and-paws
-                    npm run build
+                    cd ${DEPLOY_DIR}
+                    npm run build || exit /b 1
                     """
                 }
             }
@@ -99,9 +108,10 @@ pipeline {
         stage('Start Application') {
             steps {
                 script {
-                    echo "Starting Next.js server..."
+                    echo "🚀 Starting Next.js server..."
                     bat """
-                    cd hearts-and-paws
+                    cd ${DEPLOY_DIR}
+                    taskkill /F /IM node.exe || echo "No running process found"
                     start /B npm start > nextjs.log 2>&1
                     """
                 }
@@ -112,9 +122,17 @@ pipeline {
     post {
         success {
             echo "✅ Deployment to DEV successful!"
+            slackSend(channel: "${SLACK_CHANNEL}", 
+                      message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
+                      color: 'good', 
+                      teamDomain: 'your-slack-team')
         }
         failure {
             echo "❌ Deployment to DEV failed!"
+            slackSend(channel: "${SLACK_CHANNEL}", 
+                      message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
+                      color: 'danger', 
+                      teamDomain: 'your-slack-team')
         }
     }
 }
