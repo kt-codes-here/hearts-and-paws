@@ -8,9 +8,7 @@ pipeline {
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
         CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
         DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
-        APP_NAME = 'Slack-notifaction-service'
-        SLACK_CHANNEL = credentials('SLACK_CHANNEL')
-        SLACK_CREDENTIALS_ID = 'https://hooks.slack.com/services/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'
+        APP_NAME = 'Slack-notification-service'
     }
 
     stages {
@@ -21,7 +19,7 @@ pipeline {
                     bat """
                     cd ${DEPLOY_DIR}
                     git reset --hard HEAD
-                    git pull origin branch-dev
+                    git pull origin branch-dev || exit /b 1
                     """
                 }
             }
@@ -50,8 +48,8 @@ pipeline {
                     echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
                     bat """
                     nvm use ${NODE_VERSION} || exit /b 1
-                    node -v
-                    npm -v
+                    node -v || exit /b 1
+                    npm -v || exit /b 1
                     """
                 }
             }
@@ -63,7 +61,7 @@ pipeline {
                     echo "📦 Installing dependencies..."
                     bat """
                     cd ${DEPLOY_DIR}
-                    npm install --force
+                    npm install --force || exit /b 1
                     """
                 }
             }
@@ -120,21 +118,27 @@ pipeline {
     }
 
     post {
-    success {
-        echo "✅ Deployment to DEV successful!"
-        slackSend(channel: "${SLACK_CHANNEL}", 
-                  message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
-                  color: 'good', 
-                  botUser: true, 
-                  tokenCredentialId: 'slack-webhook')
+        always {
+            script {
+                withCredentials([
+                    string(credentialsId: 'SLACK_CHANNEL', variable: 'SLACK_CHANNEL'),
+                    string(credentialsId: 'slack-webhook', variable: 'SLACK_WEBHOOK')
+                ]) {
+                    def message = currentBuild.result == 'SUCCESS' ? 
+                        "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV" :
+                        "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV"
+
+                    def color = currentBuild.result == 'SUCCESS' ? "good" : "danger"
+
+                    slackSend(
+                        channel: "${SLACK_CHANNEL}",
+                        message: message,
+                        color: color,
+                        botUser: true,
+                        tokenCredentialId: 'slack-webhook'
+                    )
+                }
+            }
+        }
     }
-    failure {
-        echo "❌ Deployment to DEV failed!"
-        slackSend(channel: "${SLACK_CHANNEL}", 
-                  message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
-                  color: 'danger', 
-                  botUser: true, 
-                  tokenCredentialId: 'slack-webhook')
-    }
-}
 }
