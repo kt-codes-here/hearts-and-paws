@@ -120,19 +120,21 @@ pipeline {
     }
 
     post {
-        success {
-            echo "✅ Deployment to DEV successful!"
-            slackSend(channel: "${SLACK_CHANNEL}", 
-                      message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
-                      color: 'good', 
-                      teamDomain: 'cs691-CRN23318-Tue')
-        }
-        failure {
-            echo "❌ Deployment to DEV failed!"
-            slackSend(channel: "${SLACK_CHANNEL}", 
-                      message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
-                      color: 'danger', 
-                      teamDomain: 'cs691-CRN23318-Tue')
-        }
+    success {
+        echo "✅ Deployment to DEV successful!"
+        slackSend(channel: "#team4", 
+                  message: "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
+                  color: 'good', 
+                  botUser: true, 
+                  tokenCredentialId: 'slack-webhook')
     }
+    failure {
+        echo "❌ Deployment to DEV failed!"
+        slackSend(channel: "#team4", 
+                  message: "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV", 
+                  color: 'danger', 
+                  botUser: true, 
+                  tokenCredentialId: 'slack-webhook')
+    }
+}
 }
