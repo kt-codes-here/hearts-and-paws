@@ -1,56 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { roleNames } from "@/constant/utils";
+import { PetCard } from "@/components/ui/petCard";
 
-export default function AdopterDashboard() {
-  const { user, isSignedIn } = useUser();
+export default function AdoptionDashboard() {
+  const [rehomes, setRehomes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const [userData, setUserData] = useState<{ role: number; email: string } | null>(null);
+  console.log(rehomes)
 
   useEffect(() => {
-    if (isSignedIn && user) {
-      fetch("/api/auth/user")
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.role) {
-            router.push("/user-registration");
-          } else if (data.role !== 1) {
-            router.push("/dashboard");
-          } else {
-            setUserData(data);
-          }
-        })
-        .catch((err) => console.error("Error fetching user data:", err));
-    }
-  }, [isSignedIn, user, router]);
+    fetch("/api/auth/adoption/rehomes")
+      .then((res) => res.json())
+      .then((data) => {
+        setRehomes(data.rehomes || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching adoption listings:", err);
+        setLoading(false);
+      });
+  }, []);
 
-  if (!userData) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-xl font-semibold">Loading Adopter Dashboard...</p>
+        <p className="text-xl font-semibold">Loading adoption listings...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-8">
-        <h1 className="text-3xl font-bold text-purple-700 mb-4">Adopter Dashboard</h1>
-        <p className="text-lg text-gray-700">
-          Welcome, <span className="font-semibold">{userData.email}</span>!
-        </p>
-        <p className="text-lg text-gray-700 mb-6">
-          Your role: <span className="font-semibold">{roleNames[userData.role]}</span>
-        </p>
-        {/* Adopter-specific content */}
-        <div className="mt-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4">
+        <h1 className="text-3xl font-bold text-purple-700 mb-6">
+          Available Pets for Adoption
+        </h1>
+        {rehomes.length === 0 ? (
           <p className="text-gray-600">
-            Here you can manage your adoption requests, view your favorite pets, and update your profile.
+            No pets are currently available for adoption.
           </p>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {rehomes.map((item) => (
+              <PetCard
+                key={item.id}
+                name={item.pet.name}
+                location={`${item.pet.city}, ${item.pet.postcode}`}
+                gender={item.pet.gender}
+                breed={item.pet.breed}
+                age={item.pet.age.toString()}
+                size={item.pet.size}
+                image={
+                  item.pet.images && item.pet.images.length > 0
+                    ? item.pet.images[0]
+                    : "/placeholder.jpg"
+                }
+                description={item.pet.additionalInfo}
+                isNew={false} // Optionally, you can mark new listings here
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

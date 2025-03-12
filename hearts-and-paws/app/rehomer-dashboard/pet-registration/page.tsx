@@ -92,11 +92,18 @@ export default function PetRegistrationStepper() {
 
   // Check sign-in
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push("/sign-in");
+    if (isLoaded) {
+      // For example, if you're storing the role in public metadata:
+      const userRole = user?.publicMetadata?.role;
+      if (!isSignedIn || userRole !== 2) {
+        router.push("/"); // redirect unauthorized users to homepage (or sign-in page)
+      }
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, user, router]);
 
+  if (!isLoaded || !isSignedIn) {
+    return <div>Loading...</div>;
+  }
 // Excerpt from app/rehomer-dashboard/pet-registration/page.tsx
 
 const onSubmit: SubmitHandler<PetFormInputs> = async (data) => {

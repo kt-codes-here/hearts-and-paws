@@ -27,7 +27,7 @@ export default function RehomerDashboard() {
           if (!data.role) {
             router.push("/user-registration");
           } else if (data.role !== 2) {
-            router.push("/dashboard");
+            router.push("/");
           } else {
             setUserData(data);
           }
