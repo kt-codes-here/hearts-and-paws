@@ -43,8 +43,8 @@ interface Pet {
 const fetchPetData = async (id: string): Promise<Pet | null> => {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/pets/${id}`, {
-      next: { revalidate: 60 },
+    const response = await fetch(`${baseUrl}/api/pets/${id}?t=${Date.now()}`, {
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -56,8 +56,7 @@ const fetchPetData = async (id: string): Promise<Pet | null> => {
     }
 
     const data = await response.json();
-
-    console.log(data);
+    console.log("Fetched pet data:", data);
     
     // Transform the data to match the expected format
     const transformedPet: Pet = {
