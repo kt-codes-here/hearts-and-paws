@@ -14,17 +14,22 @@ const Header = () => {
   return (
     <header className="bg-white shadow-md sticky z-10 top-0">
       <div className="container mx-auto flex justify-between items-center h-18 px-4">
-        <div className="flex items-center space-x-3">
+
+        <div className="py-4">
+        <Link href="/" className="flex items-center space-x-3">
           <Image width={50} height={50} src="/Logo-sub.png" alt="logo" />
           <h1 className="text-3xl font-extrabold">
             <span className="text-primary">Hearts &</span>
             <span className="text-[#2E256F]">Paws</span>
           </h1>
+          </Link>
+         
         </div>
+
 
         <nav className="hidden md:flex space-x-6">
           <Link href="/adopt" className="text-[#2E256F] hover:text-purple-500 font-semibold">Adopt</Link>
-          <Link href="/rehoming" className="text-[#2E256F] hover:text-purple-500 font-semibold">Rehome</Link>
+          <Link href="/rehomer-dashboard" className="text-[#2E256F] hover:text-purple-500 font-semibold">Rehome</Link>
           <Link href="/services" className="text-[#2E256F] hover:text-purple-500 font-semibold">Services</Link>
           <Link href="/about" className="text-[#2E256F] hover:text-purple-500 font-semibold">About Us</Link>
         </nav>
