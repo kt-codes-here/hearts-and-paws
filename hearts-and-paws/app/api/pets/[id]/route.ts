@@ -8,7 +8,6 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Ensure params is awaited before accessing properties
     const petId = params?.id;
 
     if (!petId) {
@@ -18,7 +17,7 @@ export async function GET(
       );
     }
 
-    // Fetch the pet with owner information
+    // Fetch the pet with owner and rehome information
     const pet = await prisma.pet.findUnique({
       where: {
         id: petId,
@@ -32,6 +31,17 @@ export async function GET(
             profileImage: true,
           },
         },
+        rehomes: {
+          select: {
+            reason: true,
+            durationToKeepPet: true,
+            createdAt: true,
+          },
+          take: 1,
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
       },
     });
 
@@ -42,41 +52,19 @@ export async function GET(
       );
     }
 
-    // Transform the data to match the format expected by the PetProfile component
+    // Transform the data for the frontend
     const transformedPet = {
-      id: pet.id,
-      name: pet.name,
-      breed: pet.breed,
-      age: pet.age.toString(),
-      color: pet.colors,
-      weight: "", // Not in schema, could be added later
-      height: "", // Not in schema, could be added later
-      gender: pet.gender,
-      location: `${pet.city}, ${pet.postcode}`,
-      images: pet.images,
-      mainImage: pet.images.length > 0 ? pet.images[0] : "",
-      story: pet.additionalInfo || "",
-      vaccination: {
-        week8: pet.shotsUpToDate ? "Complete" : "Incomplete",
-        week14: pet.shotsUpToDate ? "Complete" : "Incomplete",
-        week22: pet.shotsUpToDate ? "Complete" : "Incomplete",
-      },
-      traits: [
-        pet.goodWithDogs ? "Good with dogs" : null,
-        pet.goodWithCats ? "Good with cats" : null,
-        pet.goodWithKids ? "Good with kids" : null,
-        pet.houseTrained ? "House trained" : null,
-        pet.microchipped ? "Microchipped" : null,
-        pet.shotsUpToDate ? "Shots up to date" : null,
-        pet.specialNeeds ? "Special needs" : null,
-      ].filter(Boolean) as string[],
-      distance: "", // Could calculate based on user location
-      country: "United States Of America", // Hardcoded for now, could be added to schema
+      ...pet,
       owner: {
         name: `${pet.owner.firstName || ""} ${pet.owner.lastName || ""}`.trim(),
         email: pet.owner.email,
         profileImage: pet.owner.profileImage,
-      }
+      },
+      rehomeInfo: pet.rehomes[0] ? {
+        reason: pet.rehomes[0].reason,
+        durationToKeepPet: pet.rehomes[0].durationToKeepPet,
+        listedDate: pet.rehomes[0].createdAt,
+      } : undefined,
     };
 
     return NextResponse.json(transformedPet);

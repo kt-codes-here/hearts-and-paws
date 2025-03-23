@@ -8,25 +8,10 @@ export const metadata = {
   title: "Rehomer Dashboard",
 };
 
-export default async function RehomerDashboardLayout({
+export default function RehomerDashboardLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-  console.log("Rehomer Layout: userId =", userId);
-
-  if (!userId) {
-    redirect("/");
-  }
-
-  const dbUser = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  });
-  console.log("Rehomer Layout: dbUser =", dbUser);
-  if (!dbUser || dbUser.role !== 2) {
-    redirect("/");
-  }
-
-  return <>{children}</>;
+  return <div className="rehomer-dashboard-layout">{children}</div>;
 }

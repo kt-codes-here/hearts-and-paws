@@ -44,14 +44,30 @@ const stepTitles = [
   "Pet Details",       // Step1
   "Health & Behavior", // Step2
   "Location",          // Step3
-  "Pet’s Story",       // Step4 (new)
+  "Pet's Story",       // Step4 (new)
   "Documents",         // Step5 (new)
   "Rehome Details",    // Step6
 ];
 
-export default function PetRegistrationStepper() {
+export default function PetRegistrationPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
+  
+  // Add debugging for component mounting
+  useEffect(() => {
+    console.log('Pet Registration Page Mounted');
+  }, []);
+
+  // Add authentication check
+  useEffect(() => {
+    console.log('Auth State:', { isLoaded, isSignedIn });
+    if (isLoaded) {
+      if (!isSignedIn) {
+        console.log('User not signed in, redirecting...');
+        router.push('/');
+      }
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   const methods = useForm<PetFormInputs>({
     defaultValues: {
@@ -90,23 +106,7 @@ export default function PetRegistrationStepper() {
   // Terms
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // Check sign-in
-  useEffect(() => {
-    if (isLoaded) {
-      // For example, if you're storing the role in public metadata:
-      const userRole = user?.publicMetadata?.role;
-      if (!isSignedIn || userRole !== 2) {
-        router.push("/"); // redirect unauthorized users to homepage (or sign-in page)
-      }
-    }
-  }, [isLoaded, isSignedIn, user, router]);
-
-  if (!isLoaded || !isSignedIn) {
-    return <div>Loading...</div>;
-  }
-// Excerpt from app/rehomer-dashboard/pet-registration/page.tsx
-
-const onSubmit: SubmitHandler<PetFormInputs> = async (data) => {
+  const onSubmit: SubmitHandler<PetFormInputs> = async (data) => {
     if (step === totalSteps - 1) {
       // Final step => do everything, including GCP upload
       const { files } = data;

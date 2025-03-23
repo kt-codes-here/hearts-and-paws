@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser, SignOutButton } from "@clerk/nextjs";
+import { useUser, SignOutButton, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,11 @@ const Header = () => {
 
           {/* Auth Controls */}
           {!user ? (
-            <Button className="bg-[#675bc8] hover:bg-[#5d4fc4] rounded-full p-2">
-              <Link href="/sign-in">Login | Register</Link>
-            </Button>
+          <SignedOut>
+          <SignInButton mode="modal">
+            <Button className="bg-[#675bc8] hover:bg-[#5d4fc4] rounded-full p-2">Login | Register</Button>
+          </SignInButton>
+        </SignedOut>
           ) : (
             <div className="relative">
               <Image

@@ -1,20 +1,24 @@
 "use client";
 import Image from "next/image";
-import usalogo from "../../../public/usalogo.svg";
 import { useState } from "react";
 
 interface Pet {
   id: string;
   name: string;
   breed: string;
-  age: string;
+  age: number;
   color: string;
-  weight: string;
-  height: string;
+  size: string;
   gender: string;
   location: string;
+  address: {
+    line1: string;
+    line2?: string;
+    city: string;
+    postcode: string;
+  };
   images: string[];
-  mainImage: string;
+  mainImage: string | null;
   story: string;
   vaccination: {
     week8: string;
@@ -22,22 +26,29 @@ interface Pet {
     week22: string;
   };
   traits: string[];
-  distance?: string;
-  country?: string;
+  rehomeInfo?: {
+    reason: string;
+    durationToKeepPet: string;
+    listedDate: string;
+  };
+  owner: {
+    name: string;
+    email: string;
+    profileImage: string | null;
+  };
+  shotsUpToDate: boolean;
 }
 
 export default function PetProfile({ pet }: { pet: Pet }) {
-  // State to track the current displayed main image
-  const [currentImage, setCurrentImage] = useState(pet.mainImage);
-  // State to track favorite status
+  const defaultImage = '../../../public/1-section.png';
+  const [currentImage, setCurrentImage] = useState(pet.mainImage || defaultImage);
   const [isFavorite, setIsFavorite] = useState(false);
+
   
-  // Function to handle image click
   const handleImageClick = (imageSrc: string) => {
-    setCurrentImage(imageSrc);
+    setCurrentImage(imageSrc || defaultImage);
   };
 
-  // Function to toggle favorite status
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
@@ -49,11 +60,12 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         <h1 className="text-xl font-semibold">Hi Human !</h1>
       </div>
       
+      {/* Pet Info Header */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-[70px] h-[70px] rounded-full overflow-hidden border-2 border-gray-200">
           <Image
-            src={pet.mainImage}
-            alt={pet.name}
+            src={pet.owner.profileImage || '/default-profile.png'}
+            alt={pet.owner.name}
             width={70}
             height={70}
             className="object-cover w-full h-full"
@@ -62,7 +74,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         </div>
         <div>
           <h2 className="text-xl font-semibold">{pet.name}</h2>
-          <p className="text-gray-600">Pet ID: {pet.id}</p>
+          <p className="text-gray-600">Listed by: {pet.owner.name}</p>
         </div>
         <div className="ml-auto">
           <button className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2 rounded-md transition duration-200">
@@ -73,23 +85,18 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
       {/* Location */}
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Image src={usalogo} alt="Country" width={24} height={16} />
-          <span>United States Of America</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-600 ml-6">
-          <span>{pet.location} {pet.distance && `(${pet.distance} away)`}</span>
+        <div className="flex items-center gap-2 text-gray-600">
+          <span>{pet.location}</span>
         </div>
       </div>
 
-      {/* Main content area with image and info */}
-      <div className="flex gap-6 mb-2">
-        {/* Main image container with gallery below it */}
+      {/* Main content area */}
+      <div className="flex gap-6 mb-6">
+        {/* Main image and gallery */}
         <div className="relative flex-grow flex flex-col items-center">
-          {/* Main image */}
           <div className="w-full mb-3 relative">
             <Image
-              src={currentImage}
+              src={currentImage || defaultImage}
               alt={pet.name}
               width={600}
               height={400}
@@ -100,82 +107,73 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
-              <span className="text-xl">
-                {isFavorite ? '❤️' : '🤍'}
-              </span>
+              <span className="text-xl">{isFavorite ? '❤️' : '🤍'}</span>
             </button>
           </div>
           
-          {/* Pet Gallery - centered below main image */}
-          <div className="flex gap-3 mb-4">
-            {/* Include the main image in the gallery */}
-            <div 
-              onClick={() => handleImageClick(pet.mainImage)}
-              className={`cursor-pointer rounded-lg border-2 ${currentImage === pet.mainImage ? 'border-purple-500' : 'border-gray-200'} transition-all duration-200 hover:opacity-90 w-[120px] h-[90px] overflow-hidden`}
-            >
-              <Image
-                src={pet.mainImage}
-                alt={`${pet.name} Main Image`}
-                width={120}
-                height={90}
-                className="w-full h-full object-cover"
-              />
+          {/* Gallery */}
+          {pet.images.length > 0 && (
+            <div className="flex gap-3 mb-4">
+              {pet.images.map((img, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleImageClick(img)}
+                  className={`cursor-pointer rounded-lg border-2 ${
+                    currentImage === img ? 'border-purple-500' : 'border-gray-200'
+                  } transition-all duration-200 hover:opacity-90 w-[120px] h-[90px] overflow-hidden`}
+                >
+                  <Image
+                    src={img}
+                    alt={`${pet.name} Image ${index + 1}`}
+                    width={120}
+                    height={90}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
             </div>
-            
-            {/* Other gallery images */}
-            {pet.images.map((img, index) => (
-              <div
-                key={index}
-                onClick={() => handleImageClick(img)}
-                className={`cursor-pointer rounded-lg border-2 ${currentImage === img ? 'border-purple-500' : 'border-gray-200'} transition-all duration-200 hover:opacity-90 w-[120px] h-[90px] overflow-hidden`}
-              >
-                <Image
-                  src={img}
-                  alt={`${pet.name} Image ${index + 1}`}
-                  width={120}
-                  height={90}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
+          )}
         </div>
         
-        {/* Right sidebar with pet info */}
+        {/* Right sidebar */}
         <div className="w-[350px]">
-          {/* Story section */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-white mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">{pet.name} Story</h3>
-            <p className="text-gray-600 text-sm">{pet.story}</p>
-          </div>
-          
-          {/* Traits section */}
-          <div className="bg-white p-4 rounded-lg">
-            <ul className="space-y-3">
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">👶</span> Can live with other children of any age
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">💉</span> Vaccinated
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">🏠</span> House-Trained
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">⚕️</span> Neutered
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">📋</span> Shots up to date
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-gray-500">🔍</span> Microchipped
-              </li>
-            </ul>
-          </div>
+          {/* Traits section moved to top of sidebar */}
+          {pet.traits.length > 0 && (
+            <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Traits & Characteristics</h3>
+              <ul className="space-y-3">
+                {pet.traits.map((trait, index) => (
+                  <li key={index} className="flex items-center gap-2">
+                    <span className="text-purple-500">•</span> {trait}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Rehoming Info */}
+          {pet.rehomeInfo && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Rehoming Information</h3>
+              <p className="text-gray-600 mb-2">Reason: {pet.rehomeInfo.reason}</p>
+              <p className="text-gray-600 mb-2">Available for: {pet.rehomeInfo.durationToKeepPet}</p>
+              <p className="text-gray-600">
+                Listed on: {new Date(pet.rehomeInfo.listedDate).toLocaleDateString()}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Pet Details (Small Cards) */}
+      {/* Story section moved below images */}
+      {pet.story && (
+        <div className="border border-gray-200 rounded-lg p-6 bg-white mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">{pet.name}'s Story</h3>
+          <p className="text-gray-600 leading-relaxed text-md">{pet.story}</p>
+        </div>
+      )}
+
+      {/* Pet Details Cards */}
       <div className="grid grid-cols-6 gap-4 mb-6">
         <div className="flex flex-col items-center p-3 border rounded-lg bg-white">
           <span className="text-purple-600 mb-1">🚻</span>
@@ -190,7 +188,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         <div className="flex flex-col items-center p-3 border rounded-lg bg-white">
           <span className="text-purple-600 mb-1">⏳</span>
           <p className="text-gray-500 text-xs">Age</p>
-          <p className="text-sm font-medium">{pet.age}</p>
+          <p className="text-sm font-medium">{pet.age} years</p>
         </div>
         <div className="flex flex-col items-center p-3 border rounded-lg bg-white">
           <span className="text-purple-600 mb-1">🎨</span>
@@ -198,14 +196,14 @@ export default function PetProfile({ pet }: { pet: Pet }) {
           <p className="text-sm font-medium">{pet.color}</p>
         </div>
         <div className="flex flex-col items-center p-3 border rounded-lg bg-white">
-          <span className="text-purple-600 mb-1">⚖️</span>
-          <p className="text-gray-500 text-xs">Weight</p>
-          <p className="text-sm font-medium">{pet.weight}</p>
+          <span className="text-purple-600 mb-1">📏</span>
+          <p className="text-gray-500 text-xs">Size</p>
+          <p className="text-sm font-medium">{pet.size}</p>
         </div>
         <div className="flex flex-col items-center p-3 border rounded-lg bg-white">
-          <span className="text-purple-600 mb-1">📏</span>
-          <p className="text-gray-500 text-xs">Height</p>
-          <p className="text-sm font-medium">{pet.height}</p>
+          <span className="text-purple-600 mb-1">📍</span>
+          <p className="text-gray-500 text-xs">City</p>
+          <p className="text-sm font-medium">{pet.address.city}</p>
         </div>
       </div>
 
@@ -214,7 +212,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="p-3 text-left border">Age</th>
+              <th className="p-3 text-left border">Vaccination Status</th>
               <th className="p-3 text-center border">8th Week</th>
               <th className="p-3 text-center border">14th Week</th>
               <th className="p-3 text-center border">22th Week</th>
@@ -222,22 +220,10 @@ export default function PetProfile({ pet }: { pet: Pet }) {
           </thead>
           <tbody>
             <tr>
-              <td className="p-3 border font-medium text-purple-600">Vaccinated</td>
-              <td className="p-3 border text-center">
-                <div>Bordetella</div>
-                <div className="font-medium">Match</div>
-                <div>Leptospirosis</div>
-              </td>
-              <td className="p-3 border text-center">
-                <div>Bordetella,Canine Anfluanza</div>
-                <div className="font-medium">Match</div>
-                <div>Leptospirosis</div>
-              </td>
-              <td className="p-3 border text-center">
-                <div>Bordetella,Canine Anfluanza</div>
-                <div className="font-medium">Match</div>
-                <div>Leptospirosis</div>
-              </td>
+              <td className="p-3 border font-medium text-purple-600">{pet.shotsUpToDate === true ? "Vaccinated" : "Not vaccinated"}</td>
+              <td className="p-3 border text-center">{pet.vaccination.week8}</td>
+              <td className="p-3 border text-center">{pet.vaccination.week14}</td>
+              <td className="p-3 border text-center">{pet.vaccination.week22}</td>
             </tr>
           </tbody>
         </table>
