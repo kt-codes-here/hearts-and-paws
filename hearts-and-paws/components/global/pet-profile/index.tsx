@@ -166,11 +166,11 @@ export default function PetProfile({ pet }: { pet: Pet }) {
   };
 
   // Function to handle image reordering
-  const moveImage = (index: number, direction: 'up' | 'down') => {
+  const moveImage = (index: number, direction: 'left' | 'right') => {
     const newImages = [...images];
-    if (direction === 'up' && index > 0) {
+    if (direction === 'left' && index > 0) {
       [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
-    } else if (direction === 'down' && index < newImages.length - 1) {
+    } else if (direction === 'right' && index < newImages.length - 1) {
       [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
     }
     setImages(newImages);
@@ -470,20 +470,31 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                   
                   {isEditing && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => moveImage(index, 'up')} 
-                        disabled={index === 0}
-                        className="text-white bg-gray-700 p-1 rounded-full disabled:opacity-50"
-                      >
-                        ↑
-                      </button>
-                      <button 
-                        onClick={() => moveImage(index, 'down')} 
-                        disabled={index === images.length - 1}
-                        className="text-white bg-gray-700 p-1 rounded-full disabled:opacity-50"
-                      >
-                        ↓
-                      </button>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 'left')}
+                          className="p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                          disabled={index === 0}
+                          title="Move left"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 'right')}
+                          className="p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+                          disabled={index === images.length - 1}
+                          title="Move right"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                       <button 
                         onClick={() => removeImage(index)}
                         className="text-white bg-red-700 p-1 rounded-full"
@@ -618,22 +629,21 @@ export default function PetProfile({ pet }: { pet: Pet }) {
       </div>
 
       {/* Story section - Add edit capability */}
-      {(pet.story || isEditing) && (
-        <div className="border border-gray-200 rounded-lg p-6 bg-white mb-8">
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">{isEditing ? editedPet.name : pet.name}'s Story</h3>
-          {isEditing ? (
-            <textarea
-              name="story"
-              value={editedPet.story}
-              onChange={handleInputChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              rows={5}
-            ></textarea>
-          ) : (
-            <p className="text-gray-600 leading-relaxed text-md">{pet.story}</p>
-          )}
-        </div>
-      )}
+      <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">About {pet.name}</h3>
+        {isEditing ? (
+          <textarea
+            name="story"
+            value={editedPet.story}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md h-48 focus:ring-2 focus:ring-purple-500"
+          />
+        ) : (
+          <div className="text-gray-700 whitespace-pre-line">
+            {pet.story}
+          </div>
+        )}
+      </div>
 
       {/* Pet Details Cards with edit capability */}
       <div className="grid grid-cols-6 gap-4 mb-6">
