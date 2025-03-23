@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id             String  @id @default(uuid())
+  clerkId        String  @unique  // Clerk user ID
+  email          String  @unique
+  firstName      String?
+   role        Int?    
+  lastName       String?
+  profileImage   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pets           Pet[]
+  adoptions      Adoption[]
+  rehomes        Rehome[]
+}
+
+model Pet {
+  id              String  @id @default(uuid())
+  ownerId         String  @map("userId")
+  owner           User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name            String
+  age             Int
+  size            String
+  gender          String
+  breed           String
+  colors          String
+  shotsUpToDate   Boolean
+  microchipped    Boolean
+  houseTrained    Boolean
+  goodWithDogs    Boolean
+  goodWithCats    Boolean
+  goodWithKids    Boolean
+  purebred        Boolean
+  specialNeeds    Boolean
+  behavioralIssues Boolean
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  postcode        String
+  additionalInfo  String?
+  images          String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  adoptions       Adoption[]
+  rehomes         Rehome[]
+}
+
+model Adoption {
+  id                     String @id @default(uuid())
+  userId                 String
+  user                   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId                  String
+  pet                    Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+  addressLine1           String
+  addressLine2           String?
+  postcode               String
+  town                   String
+  telephone              String
+  hasGarden             Boolean
+  homeSituation         String
+  householdSetting      String
+  activityLevel         String
+  homePhotos            String[]
+  numAdults             Int
+  numChildren           Int
+  youngestChildAge      Int
+  visitingChildren      Boolean
+  visitingChildrenAges  String?
+  flatmatesOrLodgers    Boolean
+  allergiesToPets       Boolean
+  previousPetExperience String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Rehome {
+  id                String  @id @default(uuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId             String
+  pet               Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
+  reason            String
+  durationToKeepPet String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
