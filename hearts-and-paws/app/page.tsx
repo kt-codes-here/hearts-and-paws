@@ -91,7 +91,7 @@ export default function Home() {
               <Link href="/adopt" className="bg-purple-600 text-white px-6 py-3 rounded-md text-lg hover:bg-purple-700">
                 Adopt Now
               </Link>
-              <Link href="/rehoming" className="border border-purple-600 text-purple-600 px-6 py-3 rounded-md text-lg hover:bg-purple-100">
+              <Link href="/rehomer-dashboard" className="border border-purple-600 text-purple-600 px-6 py-3 rounded-md text-lg hover:bg-purple-100">
                 Rehome Now
               </Link>
             </div>
