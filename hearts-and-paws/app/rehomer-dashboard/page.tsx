@@ -19,6 +19,7 @@ export default function RehomerDashboard() {
   const [rehomes, setRehomes] = useState<any[]>([]);
   const [loadingRehomes, setLoadingRehomes] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  console.log(userData);
 
   // Fetch the authenticated user's database record
   useEffect(() => {

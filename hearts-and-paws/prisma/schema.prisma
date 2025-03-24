@@ -13,21 +13,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id             String  @id @default(uuid())
-  clerkId        String  @unique  // Clerk user ID
-  email          String  @unique
-  firstName      String?
-   role        Int?    
-  lastName       String?
-  profileImage   String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(uuid())
+  clerkId      String   @unique // Clerk user ID
+  email        String   @unique
+  firstName    String?
+  role         Int?
+  lastName     String?
+  profileImage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  pets           Pet[]
-  adoptions      Adoption[]
-  rehomes        Rehome[]
+  pets            Pet[]
+  adoptions       Adoption[]
+  rehomes         Rehome[]
+  serviceProvider ServiceProvider?
+  appointments    Appointment[]
+  reviews         Review[]
 }
 
 model Pet {
@@ -64,16 +66,16 @@ model Pet {
 }
 
 model Adoption {
-  id                     String @id @default(uuid())
-  userId                 String
-  user                   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  petId                  String
-  pet                    Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
-  addressLine1           String
-  addressLine2           String?
-  postcode               String
-  town                   String
-  telephone              String
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petId                 String
+  pet                   Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  addressLine1          String
+  addressLine2          String?
+  postcode              String
+  town                  String
+  telephone             String
   hasGarden             Boolean
   homeSituation         String
   householdSetting      String
@@ -92,13 +94,67 @@ model Adoption {
 }
 
 model Rehome {
-  id                String  @id @default(uuid())
+  id                String   @id @default(uuid())
   userId            String
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   petId             String
-  pet               Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
+  pet               Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
   reason            String
   durationToKeepPet String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model ServiceProvider {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName String
+  address      String
+  city         String
+  postcode     String
+  phone        String
+  services     Service[]
+  appointments Appointment[]
+  reviews      Review[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Service {
+  id           String          @id @default(uuid())
+  providerId   String
+  provider     ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  name         String
+  description  String
+  price        Float
+  duration     Int
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  appointments Appointment[]
+}
+
+model Appointment {
+  id              String          @id @default(uuid())
+  serviceId       String
+  service         Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  providerId      String
+  provider        ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  appointmentDate DateTime
+  status          String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Review {
+  id         String          @id @default(uuid())
+  providerId String
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  createdAt  DateTime        @default(now())
 }
