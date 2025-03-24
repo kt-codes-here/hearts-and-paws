@@ -5,5 +5,4 @@ export interface Pet {
   images: string[];
   city: string;
   createdAt: string;
-  // ... add other fields as needed
 } 

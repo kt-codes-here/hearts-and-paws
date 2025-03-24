@@ -28,6 +28,8 @@ model User {
   pets           Pet[]
   adoptions      Adoption[]
   rehomes        Rehome[]
+  services       Service[]      // Added for Service provider relationship
+  appointments   Appointment[]  // Added for Appointment relationship
 }
 
 model Pet {
@@ -100,4 +102,30 @@ model Rehome {
   durationToKeepPet String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model Service {
+  id          String       @id @default(uuid())
+  providerId  String
+  provider    User         @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  price       Float
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String       @id @default(uuid())
+  serviceId   String
+  service     Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  adopterId   String
+  adopter     User         @relation(fields: [adopterId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  feedback    String?      // Added optional feedback field
+  status      String       // e.g., "pending", "confirmed", "completed"
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
