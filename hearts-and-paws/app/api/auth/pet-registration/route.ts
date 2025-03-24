@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     // Destructure required fields from the form data
     const {
       petName,
+      category,
       age,
       size,
       gender,
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     // Basic validation for required fields
     if (
       !petName ||
+      !category ||
       !age ||
       !size ||
       !gender ||
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
       data: {
         ownerId: existingUser.id,
         name: petName,
+        category: category,
         age: age,
         size: size,
         gender: gender,

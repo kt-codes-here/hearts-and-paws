@@ -35,6 +35,7 @@ model Pet {
   ownerId         String  @map("userId")
   owner           User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name            String
+  category        String
   age             Int
   size            String
   gender          String

@@ -88,7 +88,7 @@ export default function Home() {
               Open your heart and your home to a shelter pet.
             </p>
             <div className="mt-6 flex gap-4 justify-center md:justify-start">
-              <Link href="/adopt" className="bg-purple-600 text-white px-6 py-3 rounded-md text-lg hover:bg-purple-700">
+              <Link href="/pet-listing" className="bg-purple-600 text-white px-6 py-3 rounded-md text-lg hover:bg-purple-700">
                 Adopt Now
               </Link>
               <Link href="/rehomer-dashboard" className="border border-purple-600 text-purple-600 px-6 py-3 rounded-md text-lg hover:bg-purple-100">
