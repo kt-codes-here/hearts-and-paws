@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
   try {
     const userRecord = await prisma.user.findUnique({
       where: { clerkId: userId },
+      include: {
+        pets: true, // Include the related pets
+      },
     });
     if (!userRecord) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
