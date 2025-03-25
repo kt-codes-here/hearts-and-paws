@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { roleNames } from "@/constant/utils";
 import * as Dialog from "@radix-ui/react-dialog";
+import AvailabilitySelector from "@/components/global/availability";
 
 interface UserData {
   id: string;
@@ -250,6 +251,8 @@ export default function ServiceProviderDashboard() {
           ))}
         </div>
       </div>
+
+      <AvailabilitySelector/>
 
       <div className="mt-8">
         <h2 className="text-2xl font-semibold mb-4">Appointment Requests</h2>
