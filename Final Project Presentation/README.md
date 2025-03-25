@@ -94,8 +94,8 @@ The project follows a modular structure to keep the codebase organized and maint
 - **Jenkinsfile.dev**: Jenkins pipeline configuration for CI/CD.
 
 ## Code Flow
-1. **Entry Point**: The application starts with `app/adapter-dash/layout.tsx` and `app/adapter-dash/page.tsx`, which define the root layout and main page.
-2. **Routing**: Next.js uses file-based routing. API routes are defined under `app/adapter-dash/api/` (e.g., `pets/`, `profile/`), handling backend logic like fetching pet data or user registration.
+1. **Entry Point**: The application starts with `app/layout.tsx` and `app/page.tsx`, which define the root layout and main page.
+2. **Routing**: Next.js uses file-based routing. API routes are defined under `app/api/` (e.g., `pets/`, `profile/`), handling backend logic like fetching pet data or user registration.
 3. **Components**: Reusable UI components are stored in `components/`. Global components (e.g., `header`, `footer`) are in `components/global/`, while atomic UI elements (e.g., `button`, `input`) are in `components/ui/`.
 4. **State Management**: React context (`context/`) and custom hooks (`hooks/`) are used for state management across components.
 5. **Data Fetching**: API routes interact with the database via Prisma (`prisma/`). For example, the `pets/` endpoint fetches pet data, which is then displayed using `petList.tsx` and `petCard.tsx`.
