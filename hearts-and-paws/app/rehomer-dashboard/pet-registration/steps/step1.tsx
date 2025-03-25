@@ -30,6 +30,35 @@ export default function Step1() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
+            Pet Category *
+          </label>
+          <div className="mt-2 space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                {...register("category", { required: "Pet category is required" })}
+                value="Dog"
+                className="mr-2"
+              />
+              Dog
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                {...register("category", { required: "Pet category is required" })}
+                value="Cat"
+                className="mr-2"
+              />
+              Cat
+            </label>
+          </div>
+          {errors.category && (
+            <span className="text-red-500 text-xs">{errors.category.message}</span>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
             Age *
           </label>
           <input
