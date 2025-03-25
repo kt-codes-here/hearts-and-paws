@@ -108,3 +108,5 @@ The project follows a modular structure to keep the codebase organized and maint
    ```bash
    git clone <repository-url>
    cd hearts-and-paws
+   npm i
+   npm run dev
