@@ -1,5 +1,6 @@
 'use client'
-import UserProfile from '@/components/global/UserProfile'
+
+import UserProfile from '@/components/global/userProfile'
 import { useUser } from '@clerk/nextjs'
 import React from 'react'
 

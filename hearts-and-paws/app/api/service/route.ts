@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     let services;
     if (providerId) {
       services = await prisma.service.findMany({
-        where: { providerId }
+        where: { providerId },
+        
       });
     } else {
       // No providerId provided, return all services
