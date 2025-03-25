@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
     const userRecord = await prisma.user.findUnique({
       where: { clerkId: userId },
       include: {
-        pets: true, // Include the related pets
+        pets: true, 
+        serviceProvider: true,
+        // Include the related pets
       },
     });
     if (!userRecord) {

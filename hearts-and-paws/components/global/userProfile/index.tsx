@@ -27,6 +27,7 @@ type User = {
     profileImage: string;
     recentActivity: string[];
     pets: Pet[];
+    role: string;
 };
 
 

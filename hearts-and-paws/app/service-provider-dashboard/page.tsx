@@ -31,6 +31,8 @@ export default function ServiceProviderDashboard() {
     price: ""
   });
 
+  
+
   useEffect(() => {
     if (isSignedIn && user) {
       fetch("/api/auth/user")
@@ -53,14 +55,14 @@ export default function ServiceProviderDashboard() {
     }
   }, [isSignedIn, user, router]);
 
-  useEffect(() => {
-    if (userData) {
-      fetch(`/api/appoinment?providerId=${userData.id}`)
-        .then((res) => res.json())
-        .then((data) => setAppointments(data))
-        .catch((err) => console.error("Error fetching appointments:", err));
-    }
-  }, [userData]);
+  // useEffect(() => {
+  //   if (userData) {
+  //     fetch(`/api/appoinment?providerId=${userData.id}`)
+  //       .then((res) => res.json())
+  //       .then((data) => setAppointments(data))
+  //       .catch((err) => console.error("Error fetching appointments:", err));
+  //   }
+  // }, [userData]);
 
   const updateAppointmentStatus = (appointmentId: string, status: string, feedback = "") => {
     fetch("/api/appoinment", {
