@@ -32,19 +32,20 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { providerId, title, description, price } = body;
-    if (!providerId || !title || !description || price === undefined) {
+    const { providerId, name, description, price, duration } = body;
+    if (!providerId || !name || !description || price === undefined || duration === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: providerId, title, description, price' },
+        { error: 'Missing required fields: providerId, name, description, price, duration' },
         { status: 400 }
       );
     }
     const newService = await prisma.service.create({
       data: {
         providerId,
-        title,
+        name,
         description,
-        price: parseFloat(price)
+        price: parseFloat(price),
+        duration: parseInt(duration) // assuming duration should be an integer
       }
     });
     return NextResponse.json(newService, { status: 201 });
@@ -56,3 +57,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
