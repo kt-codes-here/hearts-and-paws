@@ -14,7 +14,7 @@ interface UserData {
 
 interface Service {
   id: string;
-  title: string;
+  name: string;
   description: string;
   price: number;
 }
@@ -55,14 +55,16 @@ export default function ServiceProviderDashboard() {
     }
   }, [isSignedIn, user, router]);
 
-  // useEffect(() => {
-  //   if (userData) {
-  //     fetch(`/api/appoinment?providerId=${userData.id}`)
-  //       .then((res) => res.json())
-  //       .then((data) => setAppointments(data))
-  //       .catch((err) => console.error("Error fetching appointments:", err));
-  //   }
-  // }, [userData]);
+  useEffect(() => {
+    if (userData) {
+      fetch(`/api/appoinment?providerId=${userData.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setAppointments(Array.isArray(data) ? data : []);
+        })
+        .catch((err) => console.error("Error fetching appointments:", err));
+    }
+  }, [userData]);
 
   const updateAppointmentStatus = (appointmentId: string, status: string, feedback = "") => {
     fetch("/api/appoinment", {
@@ -86,27 +88,32 @@ export default function ServiceProviderDashboard() {
     setNewService({ ...newService, [e.target.name]: e.target.value });
   };
 
-  const addService = () => {
+  const addService = async () => {
     if (!userData) return;
-    fetch("/api/service", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ...newService,
-        providerId: userData.id,
-        price: parseFloat(newService.price)
-      })
-    })
-      .then((res) => res.json())
-      .then((service: Service) => {
-        setServices([...services, service]);
-        // Radix Dialog will automatically close via the Close button
-      })
-      .catch((err) => console.error("Error adding service:", err));
+    try {
+      const res = await fetch("/api/service", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newService,
+          providerId: userData.id,
+          price: parseFloat(newService.price)
+        })
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert("Error adding service: " + (errorData.error || "Unknown error"));
+        return;
+      }
+  
+      const service: Service = await res.json();
+      setServices([...services, service]);
+    } catch (error) {
+      console.error("Error adding service:", error);
+      alert("Error adding service. Please try again later.");
+    }
   };
-
   const upcomingAppointments = appointments.filter(
     (apt) =>
       apt.status === "confirmed" && new Date(apt.scheduledAt) > new Date()
@@ -149,7 +156,7 @@ export default function ServiceProviderDashboard() {
               </label>
               <input
                 type="text"
-                id="title"
+                id="name"
                 name="title"
                 value={newService.title}
                 onChange={handleInputChange}
@@ -212,7 +219,7 @@ export default function ServiceProviderDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {services.map((service) => (
             <div key={service.id} className="border rounded p-4 shadow">
-              <h3 className="text-xl font-bold">{service.title}</h3>
+              <h3 className="text-xl font-bold">{service.name}</h3>
               <p className="mt-2 text-gray-700">{service.description}</p>
               <p className="mt-2 font-medium">
                 Price: ${service.price.toFixed(2)}
