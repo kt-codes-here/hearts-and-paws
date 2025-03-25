@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import * as RadioGroup from "@radix-ui/react-radio-group";
+import { Input } from "@/components/ui/input";
 
 export default function UserRegistration() {
   const router = useRouter();
@@ -14,6 +15,10 @@ export default function UserRegistration() {
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [address, setAddress] = useState("");
+  const [serviceType, setServiceType] = useState("");
+  const [contact, setContact] = useState("");
 
   // Prefill first and last name if available from Clerk
   useEffect(() => {
@@ -34,10 +39,29 @@ export default function UserRegistration() {
       setError("Please provide both first name and last name.");
       return;
     }
+
+    let requestBody: any = { role, firstName, lastName };
+
+    if (role === 3) {
+      if (!businessName.trim() || !address.trim() || !serviceType.trim() || !contact.trim()) {
+        setError("Please fill in all service provider details.");
+        return;
+      }
+  
+      requestBody = {
+        ...requestBody,
+        businessName,
+        address,
+        serviceType,
+        contact,
+      };
+    }
+
+    
     const res = await fetch("/api/user-registration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, firstName, lastName }),
+      body: JSON.stringify(requestBody),
     });
     if (res.ok) {
       // Redirect based on the numeric role
@@ -188,6 +212,48 @@ export default function UserRegistration() {
           </RadioGroup.Root>
         </div>
         {error && <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>}
+
+        {role === 3 && (
+          <>
+            <div>
+              <label>Business Name</label>
+              <Input
+              id="businessName"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Address</label>
+              <Input
+              id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Service Type</label>
+              <Input
+              id="serviceType"
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Contact Number</label>
+              <Input
+              id="contact"
+                type="tel"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                required
+              />
+            </div>
+          </>
+        )}
         <button
           type="submit"
           style={{

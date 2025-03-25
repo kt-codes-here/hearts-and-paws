@@ -124,7 +124,7 @@ model ServiceProvider {
 model Service {
   id           String          @id @default(uuid())
   providerId   String
-  provider     ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  provider     ServiceProvider @relation(fields: [providerId], references: [userId], onDelete: Cascade)
   name         String
   description  String
   price        Float
@@ -139,7 +139,7 @@ model Appointment {
   serviceId       String
   service         Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   providerId      String
-  provider        ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  provider        ServiceProvider @relation(fields: [providerId], references: [userId], onDelete: Cascade)
   customerId      String
   customer        User            @relation(fields: [customerId], references: [id], onDelete: Cascade)
   appointmentDate DateTime
