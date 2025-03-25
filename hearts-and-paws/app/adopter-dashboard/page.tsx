@@ -107,6 +107,7 @@ export default function AdopterDashboard() {
             {rehomes.map((item) => (
               <PetCard
                 key={item.id}
+                id={item.pet.id}
                 name={item.pet.name}
                 location={`${item.pet.city}, ${item.pet.postcode}`}
                 gender={item.pet.gender}
