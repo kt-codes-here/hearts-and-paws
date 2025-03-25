@@ -1,37 +1,45 @@
-// app/api/appointment/route.ts
+// app/api/appoinment/route.ts
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// GET: Fetch appointments
+// GET: Fetch appointments with optional filtering
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const providerId = searchParams.get('providerId');
-  const adopterId = searchParams.get('adopterId');
+  const customerId = searchParams.get('customerId');
+  const filter = searchParams.get('filter'); // "upcoming" or "requests"
 
   try {
     let appointments;
     if (providerId) {
       // For service providers: fetch appointments for services they own
       appointments = await prisma.appointment.findMany({
-        where: {
-          service: { providerId }
-        },
-        include: { service: true, adopter: true }
+        where: { providerId },
+        include: { service: true, customer: true }
       });
-    } else if (adopterId) {
-      // For adopters: fetch appointments they have requested
+    } else if (customerId) {
+      // For pet owners: fetch appointments they have requested
       appointments = await prisma.appointment.findMany({
-        where: { adopterId },
+        where: { customerId },
         include: { service: true }
       });
     } else {
       return NextResponse.json(
-        { error: 'providerId or adopterId query parameter is required' },
+        { error: 'providerId or customerId query parameter is required' },
         { status: 400 }
       );
+    }
+
+    // Apply optional filtering
+    if (filter === "upcoming") {
+      appointments = appointments.filter((apt) =>
+        apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
+      );
+    } else if (filter === "requests") {
+      appointments = appointments.filter((apt) => apt.status === "pending");
     }
     return NextResponse.json(appointments, { status: 200 });
   } catch (error) {
@@ -44,19 +52,20 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { serviceId, adopterId, scheduledAt } = body;
-    if (!serviceId || !adopterId || !scheduledAt) {
+    const { serviceId, providerId, customerId, appointmentDate } = body;
+    if (!serviceId || !providerId || !customerId || !appointmentDate ) {
       return NextResponse.json(
-        { error: 'Missing required fields: serviceId, adopterId, scheduledAt' },
+        { error: 'Missing required fields: serviceId, providerId, customerId, appointmentDate, status' },
         { status: 400 }
       );
     }
     const appointment = await prisma.appointment.create({
       data: {
         serviceId,
-        adopterId,
-        scheduledAt: new Date(scheduledAt),
-        status: 'pending'
+        providerId,
+        customerId,
+        appointmentDate: new Date(appointmentDate),
+        status :"pending"
       }
     });
     return NextResponse.json(appointment, { status: 201 });
@@ -66,32 +75,30 @@ export async function POST(request: Request) {
   }
 }
 
-// In your app/api/appointment/route.ts (for PUT)
+// PUT: Update appointment status, feedback, and (optionally) the appointment date
 export async function PUT(request: Request) {
-    try {
-      const body = await request.json();
-      const { appointmentId, status, feedback, scheduledAt } = body;
-      if (!appointmentId || !status) {
-        return NextResponse.json(
-          { error: 'Missing required fields: appointmentId, status' },
-          { status: 400 }
-        );
-      }
-      const updateData: any = {
-        status,
-        feedback: feedback || null,
-      };
-      if (scheduledAt) {
-        updateData.scheduledAt = new Date(scheduledAt);
-      }
-      const updatedAppointment = await prisma.appointment.update({
-        where: { id: appointmentId },
-        data: updateData,
-      });
-      return NextResponse.json(updatedAppointment, { status: 200 });
-    } catch (error) {
-      console.error('Error updating appointment:', error);
-      return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 });
+  try {
+    const body = await request.json();
+    const { appointmentId, status, appointmentDate } = body;
+    if (!appointmentId || !status) {
+      return NextResponse.json(
+        { error: 'Missing required fields: appointmentId, status' },
+        { status: 400 }
+      );
     }
+    const updateData: any = {
+      status,
+    };
+    if (appointmentDate) {
+      updateData.appointmentDate = new Date(appointmentDate);
+    }
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: updateData,
+    });
+    return NextResponse.json(updatedAppointment, { status: 200 });
+  } catch (error) {
+    console.error('Error updating appointment:', error);
+    return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 });
   }
-  
+}

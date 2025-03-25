@@ -17,6 +17,7 @@ interface Service {
   name: string;
   description: string;
   price: number;
+  duration?: number; // Duration in minutes (optional in client type)
 }
 
 export default function ServiceProviderDashboard() {
@@ -26,12 +27,11 @@ export default function ServiceProviderDashboard() {
   const [services, setServices] = useState<Service[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [newService, setNewService] = useState({
-    title: "",
+    name: "",
     description: "",
-    price: ""
+    price: "",
+    duration: ""
   });
-
-  
 
   useEffect(() => {
     if (isSignedIn && user) {
@@ -59,9 +59,7 @@ export default function ServiceProviderDashboard() {
     if (userData) {
       fetch(`/api/appoinment?providerId=${userData.id}`)
         .then((res) => res.json())
-        .then((data) => {
-          setAppointments(Array.isArray(data) ? data : []);
-        })
+        .then((data) => setAppointments(Array.isArray(data) ? data : []))
         .catch((err) => console.error("Error fetching appointments:", err));
     }
   }, [userData]);
@@ -97,7 +95,8 @@ export default function ServiceProviderDashboard() {
         body: JSON.stringify({
           ...newService,
           providerId: userData.id,
-          price: parseFloat(newService.price)
+          price: parseFloat(newService.price),
+          duration: parseInt(newService.duration)
         })
       });
   
@@ -114,9 +113,10 @@ export default function ServiceProviderDashboard() {
       alert("Error adding service. Please try again later.");
     }
   };
+
   const upcomingAppointments = appointments.filter(
     (apt) =>
-      apt.status === "confirmed" && new Date(apt.scheduledAt) > new Date()
+      apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
   );
 
   if (!userData) {
@@ -133,7 +133,7 @@ export default function ServiceProviderDashboard() {
       <Dialog.Root onOpenChange={(open) => {
         if (!open) {
           // Reset new service form when dialog closes
-          setNewService({ title: "", description: "", price: "" });
+          setNewService({ name: "", description: "", price: "", duration: "" });
         }
       }}>
         <Dialog.Trigger asChild>
@@ -150,15 +150,15 @@ export default function ServiceProviderDashboard() {
             <div className="mb-4">
               <label
                 className="block text-gray-700 mb-1"
-                htmlFor="title"
+                htmlFor="name"
               >
-                Service Title
+                Service Name
               </label>
               <input
                 type="text"
                 id="name"
-                name="title"
-                value={newService.title}
+                name="name"
+                value={newService.name}
                 onChange={handleInputChange}
                 className="w-full border rounded px-3 py-2"
               />
@@ -195,6 +195,22 @@ export default function ServiceProviderDashboard() {
                 className="w-full border rounded px-3 py-2"
               />
             </div>
+            <div className="mb-4">
+              <label
+                className="block text-gray-700 mb-1"
+                htmlFor="duration"
+              >
+                Duration (minutes)
+              </label>
+              <input
+                type="number"
+                id="duration"
+                name="duration"
+                value={newService.duration}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
             <div className="flex justify-end space-x-2">
               <Dialog.Close asChild>
                 <button className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100">
@@ -222,8 +238,13 @@ export default function ServiceProviderDashboard() {
               <h3 className="text-xl font-bold">{service.name}</h3>
               <p className="mt-2 text-gray-700">{service.description}</p>
               <p className="mt-2 font-medium">
-                Price: ${service.price.toFixed(2)}
+                Price: ${service.price !== undefined ? service.price.toFixed(2) : "N/A"}
               </p>
+              {service.duration !== undefined && (
+                <p className="mt-2 font-medium">
+                  Duration: {service.duration} minutes
+                </p>
+              )}
               {/* Additional actions like edit or delete can be added here */}
             </div>
           ))}
@@ -231,74 +252,73 @@ export default function ServiceProviderDashboard() {
       </div>
 
       <div className="mt-8">
-  <h2 className="text-2xl font-semibold mb-4">Appointment Requests</h2>
-  {appointments.length === 0 ? (
-    <p>No appointment requests.</p>
-  ) : (
-    <div className="space-y-4">
-      {appointments.map((apt) => (
-  <div key={apt.id} className="border rounded p-4 shadow">
-    <p className="font-bold">
-      {apt.service?.title || "Service information unavailable"}
-    </p>
-    <p>
-      Scheduled At: {new Date(apt.scheduledAt).toLocaleString()}
-    </p>
-    <p>Status: {apt.status}</p>
-    {apt.status === 'pending' && (
-      <div className="flex space-x-4 mt-2">
-        <button
-          onClick={() => updateAppointmentStatus(apt.id, "confirmed")}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Accept
-        </button>
-        <button
-          onClick={() =>
-            updateAppointmentStatus(
-              apt.id,
-              "declined",
-              "Service not available at that time"
-            )
-          }
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Decline
-        </button>
+        <h2 className="text-2xl font-semibold mb-4">Appointment Requests</h2>
+        {appointments.length === 0 ? (
+          <p>No appointment requests.</p>
+        ) : (
+          <div className="space-y-4">
+            {appointments.map((apt) => (
+              <div key={apt.id} className="border rounded p-4 shadow">
+                <p className="font-bold">
+                  {apt.service?.name || "Service information unavailable"}
+                </p>
+                <p>
+                  Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                </p>
+                <p>Status: {apt.status}</p>
+                {apt.status === 'pending' && (
+                  <div className="flex space-x-4 mt-2">
+                    <button
+                      onClick={() => updateAppointmentStatus(apt.id, "confirmed")}
+                      className="bg-green-600 text-white px-4 py-2 rounded"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() =>
+                        updateAppointmentStatus(
+                          apt.id,
+                          "declined",
+                          "Service not available at that time"
+                        )
+                      }
+                      className="bg-red-600 text-white px-4 py-2 rounded"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
+                {apt.feedback && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    Feedback: {apt.feedback}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    )}
-    {apt.feedback && (
-      <p className="mt-1 text-sm text-gray-600">
-        Feedback: {apt.feedback}
-      </p>
-    )}
-  </div>
-))}
 
-    </div>
-  )}
-</div>
- {/* Upcoming Appointments Section */}
- <div className="mt-12">
-      <h2 className="text-2xl font-semibold mb-4">Upcoming Appointments</h2>
-      {upcomingAppointments.length === 0 ? (
-        <p>No upcoming appointments.</p>
-      ) : (
-        <div className="space-y-4">
-          {upcomingAppointments.map((apt) => (
-            <div key={apt.id} className="border rounded p-4 shadow">
-              <p className="font-bold">
-                {apt.service?.title || "Service info unavailable"}
-              </p>
-              <p>
-                Scheduled At: {new Date(apt.scheduledAt).toLocaleString()}
-              </p>
-              <p>Status: {apt.status}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      <div className="mt-12">
+        <h2 className="text-2xl font-semibold mb-4">Upcoming Appointments</h2>
+        {upcomingAppointments.length === 0 ? (
+          <p>No upcoming appointments.</p>
+        ) : (
+          <div className="space-y-4">
+            {upcomingAppointments.map((apt) => (
+              <div key={apt.id} className="border rounded p-4 shadow">
+                <p className="font-bold">
+                  {apt.service?.name || "Service info unavailable"}
+                </p>
+                <p>
+                  Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                </p>
+                <p>Status: {apt.status}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import * as Accordion from "@radix-ui/react-accordion";
+import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import { roleNames } from "@/constant/utils";
 import Link from "next/link";
@@ -15,18 +15,25 @@ export default function RehomerDashboard() {
     role: number;
     email: string;
     firstName: string;
+    id:string;
   } | null>(null);
+  console.log(userData)
   const [rehomes, setRehomes] = useState<any[]>([]);
   const [loadingRehomes, setLoadingRehomes] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch the authenticated user's database record
+  // New states for appointment booking
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [appointmentDateTime, setAppointmentDateTime] = useState("");
+  const [appointments, setAppointments] = useState<any[]>([]);
+
+  // Fetch authenticated user record
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/');
       return;
     }
-
     if (isSignedIn && user) {
       fetch("/api/auth/user")
         .then((res) => {
@@ -68,7 +75,37 @@ export default function RehomerDashboard() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // Show loading state
+  // Fetch available services (from all service providers)
+  useEffect(() => {
+    fetch("/api/service")
+      .then((res) => res.json())
+      .then((data) => {
+        setServices(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Error fetching services:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user && userData) {
+      fetch(`/api/appoinment?customerId=${userData.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setAppointments(Array.isArray(data) ? data : []);
+        })
+        .catch((err) =>
+          console.error("Error fetching appointments:", err)
+        );
+    }
+  }, [isLoaded, isSignedIn, user, userData]);
+
+  const handlePetClick = (e: React.MouseEvent, petId: string) => {
+    e.preventDefault(); // Prevent accordion from toggling
+    router.push(`/pet/${petId}`);
+  };
+
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -77,7 +114,6 @@ export default function RehomerDashboard() {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -86,7 +122,6 @@ export default function RehomerDashboard() {
     );
   }
 
-  // Show unauthorized state
   if (!isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -95,7 +130,6 @@ export default function RehomerDashboard() {
     );
   }
 
-  // Show loading state while fetching user data
   if (!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -103,11 +137,6 @@ export default function RehomerDashboard() {
       </div>
     );
   }
-
-  const handlePetClick = (e: React.MouseEvent, petId: string) => {
-    e.preventDefault(); // Prevent accordion from toggling
-    router.push(`/pet/${petId}`);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -192,6 +221,141 @@ export default function RehomerDashboard() {
             </div>
           )}
         </div>
+
+        {/* New Section: Available Services for Appointment Booking */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4">Available Services for Appointment Booking</h2>
+          {services.length === 0 ? (
+            <p className="text-gray-600">No services available at the moment.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {services.map((service) => (
+                <div key={service.id} className="border rounded p-4 shadow">
+                  <h3 className="text-xl font-bold">{service.name}</h3>
+                  <p className="mt-2 text-gray-700">{service.description}</p>
+                  <p className="mt-2 font-medium">
+                    Price: ${service.price.toFixed(2)}
+                  </p>
+                  <p className="mt-2 font-medium">
+                    Duration: {service.duration} minutes
+                  </p>
+                  <button
+                    onClick={() => setSelectedService(service)}
+                    className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    Book Appointment
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Appointment Booking Dialog */}
+        {selectedService && (
+          <Dialog.Root
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setSelectedService(null);
+            }}
+          >
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
+              <Dialog.Content className="fixed top-1/2 left-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded shadow-lg">
+                <Dialog.Title className="text-xl font-semibold mb-4">
+                  Book Appointment for {selectedService.name}
+                </Dialog.Title>
+                <div className="mb-4">
+                  <label htmlFor="appointmentDateTime" className="block text-gray-700 mb-1">
+                    Choose Date & Time:
+                  </label>
+                  <input
+                    type="datetime-local"
+                    id="appointmentDateTime"
+                    value={appointmentDateTime}
+                    onChange={(e) => setAppointmentDateTime(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Dialog.Close asChild>
+                    <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100">
+                      Cancel
+                    </button>
+                  </Dialog.Close>
+                  <Dialog.Close asChild>
+                    <button
+                      onClick={async () => {
+                        if (!selectedService || !appointmentDateTime) return;
+                        try {
+                          const res = await fetch("/api/appoinment", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              serviceId: selectedService.id,
+                              customerId: userData.id,
+                              providerId: selectedService.providerId,
+                              appointmentDate: appointmentDateTime,
+                            }),
+                          });
+                          if (res.ok) {
+                            alert("Appointment request submitted!");
+                            setSelectedService(null);
+                            setAppointmentDateTime("");
+                          } else {
+                            const errorData = await res.json();
+                            alert(
+                              "Failed to book appointment: " +
+                                (errorData.error || "Unknown error")
+                            );
+                          }
+                        } catch (error) {
+                          console.error("Error booking appointment:", error);
+                          alert("Error booking appointment.");
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Submit
+                    </button>
+                  </Dialog.Close>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
+
+<div className="mt-12">
+  <h2 className="text-2xl font-bold mb-4">Services Requested</h2>
+  {appointments.length === 0 ? (
+    <p className="text-gray-600">No Service Requested Yet.</p>
+  ) : (
+    <div className="space-y-4">
+      {appointments.map((apt) => (
+        <div key={apt.id} className="border rounded p-4 shadow">
+          <p className="font-bold">
+            {apt.service?.name || "Service information unavailable"}
+          </p>
+          <p>
+            Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+          </p>
+          <p
+          >
+            Status: <span className={`font-medium ${
+              apt.status === "confirmed"
+                ? "text-green-600"
+                : apt.status === "pending"
+                ? "text-yellow-600"
+                : apt.status === "declined"
+                ? "text-red-600"
+                : "text-gray-600"
+            }`}>{apt.status}</span>
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
       </div>
     </div>
   );
