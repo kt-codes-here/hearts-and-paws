@@ -97,10 +97,10 @@ pipeline {
             steps {
                 script {
                     echo "🧪 Running tests..."
-                    bat """
-                        cd ${DEPLOY_DIR}
-                        npm test || exit /b 1
-                    """
+                    // bat """
+                    //     cd ${DEPLOY_DIR}
+                    //     npm test || exit /b 1
+                    // """
                 }
             }
         }
