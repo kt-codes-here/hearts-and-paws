@@ -109,11 +109,11 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Starting Next.js server in QA..."
-                    bat """
-                        cd ${DEPLOY_DIR}
-                        taskkill /F /IM node.exe || echo "No running process found"
-                        start /B npm start > nextjs.log 2>&1
-                    """
+                    // bat """
+                    //     cd ${DEPLOY_DIR}
+                    //     taskkill /F /IM node.exe || echo "No running process found"
+                    //     start /B npm start > nextjs.log 2>&1
+                    // """
                 }
             }
         }
