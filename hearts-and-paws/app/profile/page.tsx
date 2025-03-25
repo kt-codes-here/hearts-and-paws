@@ -1,4 +1,5 @@
 'use client'
+import UserProfile from '@/components/global/userProfile'
 import { useUser } from '@clerk/nextjs'
 import React from 'react'
 
@@ -12,9 +13,7 @@ const ProfilePage = (props: Props) => {
 
     
   return (
-    <div className='flex flex-col md:flex-row gap-6 p-4 max-w-6xl mx-auto'>
-<h1>Profile</h1>
-    </div>
+    <UserProfile/>
   )
 }
 
