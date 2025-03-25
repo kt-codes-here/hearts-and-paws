@@ -13,8 +13,8 @@ import Step5 from "./steps/step5";  // Documents/Images (new)
 import Step6 from "./steps/step6";  // Rehome Details (old step5)
 
 export interface PetFormInputs {
-  // same as shown above
   petName: string;
+  category: string;
   age: number;
   size: string;
   gender: string;

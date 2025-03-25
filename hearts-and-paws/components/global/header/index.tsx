@@ -28,7 +28,7 @@ const Header = () => {
 
 
         <nav className="hidden md:flex space-x-6">
-          <Link href="/adopt" className="text-[#2E256F] hover:text-purple-500 font-semibold">Adopt</Link>
+          <Link href="/pet-listing" className="text-[#2E256F] hover:text-purple-500 font-semibold">Adopt</Link>
           <Link href="/rehomer-dashboard" className="text-[#2E256F] hover:text-purple-500 font-semibold">Rehome</Link>
           <Link href="/services" className="text-[#2E256F] hover:text-purple-500 font-semibold">Services</Link>
           <Link href="/about" className="text-[#2E256F] hover:text-purple-500 font-semibold">About Us</Link>
