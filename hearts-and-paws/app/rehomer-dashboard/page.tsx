@@ -337,6 +337,12 @@ export default function RehomerDashboard() {
             {apt.service?.name || "Service information unavailable"}
           </p>
           <p>
+            Service Provider: <span>{apt.provider.businessName}</span>
+          </p>
+          <p>
+            Contact: <span>{apt.provider.phone}</span>
+          </p>
+          <p>
             Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
           </p>
           <p
