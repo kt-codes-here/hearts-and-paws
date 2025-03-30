@@ -70,16 +70,10 @@ export default function AdopterDashboard() {
       fetch(`/api/appoinment?adopterId=${userData.id}`)
         .then((res) => res.json())
         .then((data) => {
-          const upcoming = (Array.isArray(data) ? data : []).filter(
-            (apt) =>
-              apt.status === "confirmed" &&
-              new Date(apt.scheduledAt) > new Date()
-          );
+          const upcoming = (Array.isArray(data) ? data : []).filter((apt) => apt.status === "confirmed" && new Date(apt.scheduledAt) > new Date());
           setUpcomingAppointments(upcoming);
         })
-        .catch((err) =>
-          console.error("Error fetching adopter appointments:", err)
-        );
+        .catch((err) => console.error("Error fetching adopter appointments:", err));
     }
   }, [userData]);
 
@@ -95,13 +89,9 @@ export default function AdopterDashboard() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         {/* Adoption Listings Section */}
-        <h1 className="text-3xl font-bold text-purple-700 mb-6">
-          Available Pets for Adoption
-        </h1>
+        <h1 className="text-3xl font-bold text-purple-700 mb-6">Available Pets for Adoption</h1>
         {rehomes.length === 0 ? (
-          <p className="text-gray-600">
-            No pets are currently available for adoption.
-          </p>
+          <p className="text-gray-600">No pets are currently available for adoption.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {rehomes.map((item) => (
@@ -114,11 +104,7 @@ export default function AdopterDashboard() {
                 breed={item.pet.breed}
                 age={item.pet.age.toString()}
                 size={item.pet.size}
-                image={
-                  item.pet.images && item.pet.images.length > 0
-                    ? item.pet.images[0]
-                    : "/placeholder.jpg"
-                }
+                image={item.pet.images && item.pet.images.length > 0 ? item.pet.images[0] : "/placeholder.jpg"}
                 description={item.pet.additionalInfo}
                 isNew={false}
               />
@@ -130,20 +116,16 @@ export default function AdopterDashboard() {
         <div className="mt-12">
           <h2 className="text-3xl font-bold text-purple-700 mb-6">Upcoming Appointments</h2>
           {upcomingAppointments.length === 0 ? (
-            <p className="text-gray-600">
-              You have no upcoming appointments.
-            </p>
+            <p className="text-gray-600">You have no upcoming appointments.</p>
           ) : (
             <div className="space-y-4">
               {upcomingAppointments.map((apt) => (
-                <div key={apt.id} className="border rounded p-4 shadow">
-                  <p className="font-bold">
-                    {apt.service?.title || "Service information unavailable"}
-                  </p>
-                  <p>
-                    Scheduled At:{" "}
-                    {new Date(apt.scheduledAt).toLocaleString()}
-                  </p>
+                <div
+                  key={apt.id}
+                  className="border rounded p-4 shadow"
+                >
+                  <p className="font-bold">{apt.service?.title || "Service information unavailable"}</p>
+                  <p>Scheduled At: {new Date(apt.scheduledAt).toLocaleString()}</p>
                   <p>Status: {apt.status}</p>
                 </div>
               ))}

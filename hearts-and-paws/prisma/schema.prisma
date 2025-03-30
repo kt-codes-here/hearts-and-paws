@@ -27,13 +27,14 @@ model User {
   pets            Pet[]
   adoptions       Adoption[]
   rehomes         Rehome[]
+  adoptionRequests AdoptionRequest[]
   serviceProvider ServiceProvider?
   appointments    Appointment[]
   reviews         Review[]
 }
 
 model Pet {
-  id              String  @id @default(uuid())
+  id              String   @id @default(uuid())
   ownerId         String  @map("userId")
   owner           User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name            String
@@ -58,11 +59,15 @@ model Pet {
   postcode        String
   additionalInfo  String?
   images          String[]
+  status          String   @default("available") // available, pending, adopted
+  isAdopted       Boolean  @default(false)      // New field
+  adoptedBy       String?  // New field to store the user ID who adopted
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   adoptions       Adoption[]
   rehomes         Rehome[]
+  adoptionRequests AdoptionRequest[]
 }
 
 model Adoption {
@@ -157,4 +162,16 @@ model Review {
   rating     Int
   comment    String?
   createdAt  DateTime        @default(now())
+}
+
+model AdoptionRequest {
+  id          String   @id @default(uuid())
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  status      String   @default("pending")
+  message     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
