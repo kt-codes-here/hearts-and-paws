@@ -6,7 +6,6 @@ import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/global/header";
 import { UserProvider } from "@/context/UserContext";
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,21 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased suppressHydrationWarning`}
-      >    <ClerkProvider>
-        
-              <Header />
-              <UserProvider>
-        {children}
-        </UserProvider>
-        <Footer/>
-
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased suppressHydrationWarning`}>
+        {" "}
+        <ClerkProvider>
+          <Header />
+          <UserProvider>{children}</UserProvider>
+          <Footer />
         </ClerkProvider>
       </body>
     </html>
-
   );
 }

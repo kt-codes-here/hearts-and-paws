@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "react-hot-toast";
 
 interface Pet {
   id: string;
@@ -39,11 +40,13 @@ interface Pet {
     profileImage: string | null;
   };
   shotsUpToDate: boolean;
+  status: string;
+  isAdopted: boolean;
 }
 
 export default function PetProfile({ pet }: { pet: Pet }) {
   const { user: currentUser, isLoaded: userLoaded } = useUser();
-  const defaultImage = '../../../public/1-section.png';
+  const defaultImage = "../../../public/1-section.png";
   const [currentImage, setCurrentImage] = useState(pet.mainImage || defaultImage);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,18 +58,27 @@ export default function PetProfile({ pet }: { pet: Pet }) {
     week22: pet.vaccination?.week22 || "",
   });
   const router = useRouter();
+  const [isAdoptionRequesting, setIsAdoptionRequesting] = useState(false);
+  const [adoptionMessage, setAdoptionMessage] = useState("");
+  const [adoptionStatus, setAdoptionStatus] = useState(null);
 
   const isOwner = useMemo(() => {
     if (!userLoaded || !currentUser || !pet.owner) {
       return false;
     }
-    
+
     return currentUser.primaryEmailAddress?.emailAddress === pet.owner.email;
   }, [currentUser, userLoaded, pet.owner]);
 
   useEffect(() => {
     console.log("Current pet data:", pet);
   }, [pet]);
+
+  useEffect(() => {
+    console.log("Pet status:", pet.status);
+    console.log("Is owner:", isOwner);
+    console.log("Is editing:", isEditing);
+  }, [pet.status, isOwner, isEditing]);
 
   const handleImageClick = (imageSrc: string) => {
     setCurrentImage(imageSrc || defaultImage);
@@ -87,7 +99,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setEditedPet(prev => ({
+    setEditedPet((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -96,7 +108,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
   const handleTraitChange = (index: number, value: string) => {
     const updatedTraits = [...editedPet.traits];
     updatedTraits[index] = value;
-    setEditedPet(prev => ({
+    setEditedPet((prev) => ({
       ...prev,
       traits: updatedTraits,
     }));
@@ -104,7 +116,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
   const removeTrait = (index: number) => {
     const updatedTraits = editedPet.traits.filter((_, i) => i !== index);
-    setEditedPet(prev => ({
+    setEditedPet((prev) => ({
       ...prev,
       traits: updatedTraits,
     }));
@@ -112,36 +124,26 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
   const addTrait = () => {
     // Create a dropdown to select from available traits
-    const availableTraits = [
-      "Good with dogs",
-      "Good with cats",
-      "Good with kids",
-      "House trained", 
-      "Microchipped",
-      "Shots up to date",
-      "Special needs",
-      "Has behavioral issues",
-      "Purebred"
-    ];
-    
+    const availableTraits = ["Good with dogs", "Good with cats", "Good with kids", "House trained", "Microchipped", "Shots up to date", "Special needs", "Has behavioral issues", "Purebred"];
+
     // Filter out traits that are already selected
-    const unusedTraits = availableTraits.filter(trait => !editedPet.traits.includes(trait));
-    
+    const unusedTraits = availableTraits.filter((trait) => !editedPet.traits.includes(trait));
+
     if (unusedTraits.length === 0) {
       alert("All available traits have already been added.");
       return;
     }
-    
+
     // Add the first available trait
-    setEditedPet(prev => ({ 
-      ...prev, 
-      traits: [...prev.traits, unusedTraits[0]]
+    setEditedPet((prev) => ({
+      ...prev,
+      traits: [...prev.traits, unusedTraits[0]],
     }));
   };
 
   const handleRehomeInfoChange = (field: string, value: string) => {
     if (editedPet.rehomeInfo) {
-      setEditedPet(prev => ({
+      setEditedPet((prev) => ({
         ...prev,
         rehomeInfo: {
           ...prev.rehomeInfo!,
@@ -151,26 +153,26 @@ export default function PetProfile({ pet }: { pet: Pet }) {
     }
   };
 
-  const handleVaccinationChange = (period: 'week8' | 'week14' | 'week22', value: string) => {
-    setVaccinations(prev => ({
+  const handleVaccinationChange = (period: "week8" | "week14" | "week22", value: string) => {
+    setVaccinations((prev) => ({
       ...prev,
       [period]: value,
     }));
   };
 
   const handleShotsChange = (value: boolean) => {
-    setEditedPet(prev => ({
+    setEditedPet((prev) => ({
       ...prev,
       shotsUpToDate: value,
     }));
   };
 
   // Function to handle image reordering
-  const moveImage = (index: number, direction: 'left' | 'right') => {
+  const moveImage = (index: number, direction: "left" | "right") => {
     const newImages = [...images];
-    if (direction === 'left' && index > 0) {
+    if (direction === "left" && index > 0) {
       [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
-    } else if (direction === 'right' && index < newImages.length - 1) {
+    } else if (direction === "right" && index < newImages.length - 1) {
       [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
     }
     setImages(newImages);
@@ -179,64 +181,64 @@ export default function PetProfile({ pet }: { pet: Pet }) {
   // Function to remove an image
   const removeImage = async (index: number) => {
     const imageToRemove = images[index];
-    
+
     // Remove from UI immediately for better UX
     const newImages = images.filter((_, i) => i !== index);
     setImages(newImages);
-    
+
     if (currentImage === images[index]) {
       setCurrentImage(newImages[0] || defaultImage);
     }
-    
+
     // Delete from storage
     try {
-      const response = await fetch('/api/delete-gcp', {
-        method: 'POST',
+      const response = await fetch("/api/delete-gcp", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           imageUrl: imageToRemove,
-          petId: pet.id
+          petId: pet.id,
         }),
       });
-      
+
       if (!response.ok) {
         // If deletion fails, revert the UI change
-        console.error('Failed to delete image from storage');
+        console.error("Failed to delete image from storage");
         setImages(images); // Restore original images array
-        alert('Failed to delete image. Please try again.');
+        alert("Failed to delete image. Please try again.");
       }
     } catch (error) {
-      console.error('Error calling delete API:', error);
+      console.error("Error calling delete API:", error);
       // If there's an exception, also revert the UI
       setImages(images);
-      alert('Failed to delete image. Please try again.');
+      alert("Failed to delete image. Please try again.");
     }
   };
 
   // Function to add new images
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
     const file = e.target.files[0];
     const formData = new FormData();
-    formData.append('file', file);
-    
+    formData.append("file", file);
+
     try {
       // Upload image to GCP using your existing endpoint
-      const response = await fetch('/api/upload-gcp', {
-        method: 'POST',
+      const response = await fetch("/api/upload-gcp", {
+        method: "POST",
         body: formData,
       });
-      
-      if (!response.ok) throw new Error('Image upload failed');
-      
+
+      if (!response.ok) throw new Error("Image upload failed");
+
       const { imageUrl } = await response.json();
       setImages([...images, imageUrl]);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image. Please try again.");
     }
   };
 
@@ -246,87 +248,87 @@ export default function PetProfile({ pet }: { pet: Pet }) {
       // Create a mapping between trait strings and the corresponding boolean fields
       const traitMapping = {
         "Good with dogs": "goodWithDogs",
-        "Good with cats": "goodWithCats", 
+        "Good with cats": "goodWithCats",
         "Good with kids": "goodWithKids",
         "House trained": "houseTrained",
-        "Microchipped": "microchipped",
+        Microchipped: "microchipped",
         "Shots up to date": "shotsUpToDate",
         "Special needs": "specialNeeds",
         "Has behavioral issues": "behavioralIssues",
-        "Purebred": "purebred"
+        Purebred: "purebred",
       };
-      
+
       // Create boolean fields based on the current traits
       const traitBooleans = {};
-      
+
       // Set all traits to false by default
-      Object.values(traitMapping).forEach(field => {
+      Object.values(traitMapping).forEach((field) => {
         traitBooleans[field] = false;
       });
-      
+
       // Then set the ones that are present in the traits list to true
-      editedPet.traits.forEach(trait => {
+      editedPet.traits.forEach((trait) => {
         const fieldName = traitMapping[trait];
         if (fieldName) {
           traitBooleans[fieldName] = true;
         }
       });
-      
+
       console.log("Traits being updated:", editedPet.traits);
       console.log("Trait booleans:", traitBooleans);
-      
+
       // Format the data directly matching the database schema fields
       const updatedPet = {
         // Basic info
         name: editedPet.name,
-        age: parseInt(String(editedPet.age)), 
+        age: parseInt(String(editedPet.age)),
         size: editedPet.size,
         gender: editedPet.gender,
         breed: editedPet.breed,
         colors: editedPet.color, // Use color for colors field
-        
+
         // Include all boolean fields from traits
         ...traitBooleans,
-        
+
         // Map address fields to match the schema
         addressLine1: editedPet.address.line1,
         addressLine2: editedPet.address.line2 || null,
         city: editedPet.address.city,
         postcode: editedPet.address.postcode,
-        
+
         // Story field
         additionalInfo: editedPet.story,
-        
+
         // Updated images array
         images: images,
-        
+
         // Rehome info as a separate structure
-        rehomeInfo: editedPet.rehomeInfo
+        rehomeInfo: editedPet.rehomeInfo,
       };
-      
+
       console.log("Sending update data:", JSON.stringify(updatedPet));
-      
+
       const response = await fetch(`/api/pets/${pet.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(updatedPet),
       });
-      
+
       const responseData = await response.json();
       console.log("Response from server:", responseData);
-      
+
       if (!response.ok) {
         throw new Error(responseData.error || "Failed to update pet");
       }
-      
-      alert('Pet profile updated successfully!');
-      
+
+      alert("Pet profile updated successfully!");
+
       // Force a hard refresh with no caching to ensure updated data is fetched
-      window.location.href = window.location.pathname + '?t=' + new Date().getTime();
+      window.location.href = window.location.pathname + "?t=" + new Date().getTime();
     } catch (error) {
-      console.error('Error updating pet:', error);
+      console.error("Error updating pet:", error);
       alert(`Update failed: ${error.message}`);
     }
   };
@@ -335,22 +337,68 @@ export default function PetProfile({ pet }: { pet: Pet }) {
     try {
       // Fetch fresh data from API
       const response = await fetch(`/api/pets/${pet.id}?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to refresh data");
       }
-      
+
       const freshData = await response.json();
       console.log("Fresh data from database:", freshData);
-      
+
       // Show alert with some of the updated data
       alert(`Latest data from database:\nName: ${freshData.name}\nBreed: ${freshData.breed}\nAge: ${freshData.age}\nColors: ${freshData.colors}`);
     } catch (error) {
       console.error("Error refreshing data:", error);
       alert("Failed to refresh data");
+    }
+  };
+
+  const handleAdoptRequest = async () => {
+    if (!currentUser) {
+      toast.error("Please sign in to request adoption");
+      return;
+    }
+
+    // Show confirmation dialog
+    setIsAdoptionRequesting(true);
+  };
+
+  const submitAdoptionRequest = async () => {
+    try {
+      setAdoptionStatus("submitting");
+
+      const response = await fetch("/api/adoption-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          petId: pet.id,
+          message: adoptionMessage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit adoption request");
+      }
+
+      setAdoptionStatus("success");
+      toast.success("Adoption request submitted successfully");
+      setTimeout(() => {
+        setIsAdoptionRequesting(false);
+        setAdoptionStatus(null);
+        // Refresh the page to show updated status
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting adoption request:", error);
+      setAdoptionStatus("error");
+      toast.error(error.message || "Failed to submit adoption request");
     }
   };
 
@@ -360,12 +408,12 @@ export default function PetProfile({ pet }: { pet: Pet }) {
       <div className="mb-6">
         <h1 className="text-xl font-semibold">Hi Human !</h1>
       </div>
-      
+
       {/* Pet Info Header */}
       <div className="flex items-center gap-4 mb-4">
         <div className="w-[70px] h-[70px] rounded-full overflow-hidden border-2 border-gray-200">
           <Image
-            src={pet.owner.profileImage || '/default-profile.png'}
+            src={pet.owner.profileImage || "/default-profile.png"}
             alt={pet.owner.name}
             width={70}
             height={70}
@@ -390,30 +438,44 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         </div>
         <div className="ml-auto flex gap-2">
           {isOwner && (
-            <button 
+            <button
               onClick={toggleEditMode}
-              className={`${isEditing 
-                ? "bg-gray-500 hover:bg-gray-600" 
-                : "bg-blue-600 hover:bg-blue-700"} 
+              className={`${isEditing ? "bg-gray-500 hover:bg-gray-600" : "bg-blue-600 hover:bg-blue-700"} 
                 text-white font-medium px-6 py-2 rounded-md transition duration-200`}
             >
               {isEditing ? "Cancel Edit" : "Edit Profile"}
             </button>
           )}
-          
+
           {isOwner && isEditing && (
-            <button 
+            <button
               onClick={saveChanges}
               className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded-md transition duration-200"
             >
               Save Changes
             </button>
           )}
-          
-          {!isEditing && (
-            <button className="bg-[#675bc8] hover:bg-[#5245b9] text-white font-medium px-6 py-2 rounded-md transition duration-200">
-              Adopt Pet
-            </button>
+
+          {!isEditing && !isOwner && (
+            <>
+              {pet.isAdopted ? (
+                <div className="bg-green-100 text-green-800 px-6 py-2 rounded-md">Pet Adopted</div>
+              ) : pet.status === "available" ? (
+                <button
+                  onClick={handleAdoptRequest}
+                  className="bg-[#675bc8] hover:bg-[#5245b9] text-white font-medium px-6 py-2 rounded-md transition duration-200"
+                >
+                  Request to Adopt
+                </button>
+              ) : pet.status === "pending" ? (
+                <button
+                  disabled
+                  className="bg-yellow-500 text-white font-medium px-6 py-2 rounded-md cursor-not-allowed"
+                >
+                  Adoption Pending
+                </button>
+              ) : null}
+            </>
           )}
         </div>
       </div>
@@ -438,25 +500,23 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               className="rounded-lg w-full h-auto"
             />
             {!isEditing && (
-              <button 
+              <button
                 onClick={toggleFavorite}
                 className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
                 aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
-                <span className="text-xl">{isFavorite ? '❤️' : '🤍'}</span>
+                <span className="text-xl">{isFavorite ? "❤️" : "🤍"}</span>
               </button>
             )}
           </div>
-          
+
           {/* Gallery with Edit Controls */}
           {images.length > 0 && (
             <div className="flex flex-wrap gap-3 mb-4">
               {images.map((img, index) => (
                 <div
                   key={index}
-                  className={`relative cursor-pointer rounded-lg border-2 ${
-                    currentImage === img ? 'border-purple-500' : 'border-gray-200'
-                  } transition-all duration-200 hover:opacity-90 w-[120px] h-[90px] overflow-hidden`}
+                  className={`relative cursor-pointer rounded-lg border-2 ${currentImage === img ? "border-purple-500" : "border-gray-200"} transition-all duration-200 hover:opacity-90 w-[120px] h-[90px] overflow-hidden`}
                 >
                   <div onClick={() => handleImageClick(img)}>
                     <Image
@@ -467,35 +527,53 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  
+
                   {isEditing && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center gap-1 opacity-0 hover:opacity-100 transition-opacity">
                       <div className="flex items-center space-x-2 mt-1">
                         <button
                           type="button"
-                          onClick={() => moveImage(index, 'left')}
+                          onClick={() => moveImage(index, "left")}
                           className="p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                           disabled={index === 0}
                           title="Move left"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </button>
-                        
+
                         <button
                           type="button"
-                          onClick={() => moveImage(index, 'right')}
+                          onClick={() => moveImage(index, "right")}
                           className="p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
                           disabled={index === images.length - 1}
                           title="Move right"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </button>
                       </div>
-                      <button 
+                      <button
                         onClick={() => removeImage(index)}
                         className="text-white bg-red-700 p-1 rounded-full"
                       >
@@ -505,16 +583,16 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                   )}
                 </div>
               ))}
-              
+
               {isEditing && (
                 <div className="w-[120px] h-[90px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50">
                   <label className="cursor-pointer w-full h-full flex items-center justify-center">
                     <span className="text-3xl text-gray-400">+</span>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleImageUpload} 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
                     />
                   </label>
                 </div>
@@ -522,7 +600,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
             </div>
           )}
         </div>
-        
+
         {/* Right sidebar */}
         <div className="w-[350px]">
           {/* Traits section with edit capability */}
@@ -532,7 +610,10 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               {isEditing ? (
                 <div className="space-y-3">
                   {editedPet.traits.map((trait, index) => (
-                    <div key={index} className="flex items-center gap-2">
+                    <div
+                      key={index}
+                      className="flex items-center gap-2"
+                    >
                       <span className="text-purple-500">•</span>
                       <select
                         value={trait}
@@ -570,7 +651,10 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               ) : (
                 <ul className="space-y-3">
                   {pet.traits.map((trait, index) => (
-                    <li key={index} className="flex items-center gap-2">
+                    <li
+                      key={index}
+                      className="flex items-center gap-2"
+                    >
                       <span className="text-purple-500">•</span> {trait}
                     </li>
                   ))}
@@ -586,9 +670,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               {isEditing ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason:
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason:</label>
                     <textarea
                       value={editedPet.rehomeInfo?.reason || ""}
                       onChange={(e) => handleRehomeInfoChange("reason", e.target.value)}
@@ -597,9 +679,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                     ></textarea>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Available for:
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Available for:</label>
                     <select
                       value={editedPet.rehomeInfo?.durationToKeepPet || ""}
                       onChange={(e) => handleRehomeInfoChange("durationToKeepPet", e.target.value)}
@@ -618,9 +698,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                 <>
                   <p className="text-gray-600 mb-2">Reason: {pet.rehomeInfo?.reason}</p>
                   <p className="text-gray-600 mb-2">Available for: {pet.rehomeInfo?.durationToKeepPet}</p>
-                  <p className="text-gray-600">
-                    Listed on: {pet.rehomeInfo?.listedDate ? new Date(pet.rehomeInfo.listedDate).toLocaleDateString() : "N/A"}
-                  </p>
+                  <p className="text-gray-600">Listed on: {pet.rehomeInfo?.listedDate ? new Date(pet.rehomeInfo.listedDate).toLocaleDateString() : "N/A"}</p>
                 </>
               )}
             </div>
@@ -639,9 +717,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
             className="w-full p-2 border rounded-md h-48 focus:ring-2 focus:ring-purple-500"
           />
         ) : (
-          <div className="text-gray-700 whitespace-pre-line">
-            {pet.story}
-          </div>
+          <div className="text-gray-700 whitespace-pre-line">{pet.story}</div>
         )}
       </div>
 
@@ -738,12 +814,12 @@ export default function PetProfile({ pet }: { pet: Pet }) {
               name="address.city"
               value={editedPet.address.city}
               onChange={(e) => {
-                setEditedPet(prev => ({
+                setEditedPet((prev) => ({
                   ...prev,
                   address: {
                     ...prev.address,
-                    city: e.target.value
-                  }
+                    city: e.target.value,
+                  },
                 }));
               }}
               className="text-sm w-full text-center p-1 border rounded-md"
@@ -777,8 +853,10 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                     <option value="true">Vaccinated</option>
                     <option value="false">Not vaccinated</option>
                   </select>
+                ) : pet.shotsUpToDate ? (
+                  "Vaccinated"
                 ) : (
-                  pet.shotsUpToDate ? "Vaccinated" : "Not vaccinated"
+                  "Not vaccinated"
                 )}
               </td>
               <td className="p-3 border text-center">
@@ -826,11 +904,14 @@ export default function PetProfile({ pet }: { pet: Pet }) {
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-center mb-6">Similar Pets</h2>
         <div className="grid grid-cols-4 gap-4">
-          {['Lisa', 'Bella', 'Lucy', 'Stella'].map((name, index) => (
-            <div key={index} className="flex flex-col items-center">
+          {["Lisa", "Bella", "Lucy", "Stella"].map((name, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center"
+            >
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-2 overflow-hidden">
-                <Image 
-                  src={`/sample${index + 1}.jpg`} 
+                <Image
+                  src={`/sample${index + 1}.jpg`}
                   alt={name}
                   width={96}
                   height={96}
@@ -838,11 +919,9 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                 />
               </div>
               <h3 className="font-medium mb-1">{name}</h3>
-              <p className="text-sm text-gray-600 mb-1">{index === 1 ? 'Male' : 'Female'}</p>
+              <p className="text-sm text-gray-600 mb-1">{index === 1 ? "Male" : "Female"}</p>
               <p className="text-sm text-gray-600 mb-3">Shiba Inu</p>
-              <button className="text-sm border border-gray-300 rounded-md px-4 py-1 hover:bg-gray-50">
-                More Info
-              </button>
+              <button className="text-sm border border-gray-300 rounded-md px-4 py-1 hover:bg-gray-50">More Info</button>
             </div>
           ))}
         </div>
@@ -852,91 +931,135 @@ export default function PetProfile({ pet }: { pet: Pet }) {
       {isEditing && (
         <div className="border border-gray-200 rounded-lg p-6 bg-white mb-8">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Address Information</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address Line 1
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
               <input
                 type="text"
                 name="address.line1"
                 value={editedPet.address.line1}
                 onChange={(e) => {
-                  setEditedPet(prev => ({
+                  setEditedPet((prev) => ({
                     ...prev,
                     address: {
                       ...prev.address,
-                      line1: e.target.value
-                    }
+                      line1: e.target.value,
+                    },
                   }));
                 }}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address Line 2 (Optional)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2 (Optional)</label>
               <input
                 type="text"
                 name="address.line2"
-                value={editedPet.address.line2 || ''}
+                value={editedPet.address.line2 || ""}
                 onChange={(e) => {
-                  setEditedPet(prev => ({
+                  setEditedPet((prev) => ({
                     ...prev,
                     address: {
                       ...prev.address,
-                      line2: e.target.value
-                    }
+                      line2: e.target.value,
+                    },
                   }));
                 }}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                City
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
               <input
                 type="text"
                 name="address.city"
                 value={editedPet.address.city}
                 onChange={(e) => {
-                  setEditedPet(prev => ({
+                  setEditedPet((prev) => ({
                     ...prev,
                     address: {
                       ...prev.address,
-                      city: e.target.value
-                    }
+                      city: e.target.value,
+                    },
                   }));
                 }}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Postcode
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
               <input
                 type="text"
                 name="address.postcode"
                 value={editedPet.address.postcode}
                 onChange={(e) => {
-                  setEditedPet(prev => ({
+                  setEditedPet((prev) => ({
                     ...prev,
                     address: {
                       ...prev.address,
-                      postcode: e.target.value
-                    }
+                      postcode: e.target.value,
+                    },
                   }));
                 }}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Adoption Request Modal */}
+      {isAdoptionRequesting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">Request to Adopt {pet.name}</h3>
+
+            {adoptionStatus === "success" ? (
+              <div className="text-center p-4">
+                <div className="text-green-600 text-5xl mb-4">✓</div>
+                <p>Your adoption request has been submitted successfully!</p>
+                <p className="mt-2 text-gray-600">The pet owner will review your request and get back to you.</p>
+              </div>
+            ) : adoptionStatus === "error" ? (
+              <div className="text-center p-4">
+                <div className="text-red-600 text-5xl mb-4">✗</div>
+                <p>Failed to submit your adoption request.</p>
+                <p className="mt-2 text-gray-600">Please try again later.</p>
+              </div>
+            ) : (
+              <>
+                <p className="mb-4">Please provide a brief message to the pet owner explaining why you would like to adopt {pet.name}.</p>
+
+                <textarea
+                  className="w-full p-2 border rounded-md h-32 focus:ring-2 focus:ring-purple-500"
+                  placeholder="Tell the owner why you would be a great match for this pet..."
+                  value={adoptionMessage}
+                  onChange={(e) => setAdoptionMessage(e.target.value)}
+                  disabled={adoptionStatus === "submitting"}
+                ></textarea>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setIsAdoptionRequesting(false)}
+                    className="px-4 py-2 border rounded-md hover:bg-gray-100"
+                    disabled={adoptionStatus === "submitting"}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitAdoptionRequest}
+                    className="px-4 py-2 bg-[#675bc8] hover:bg-[#5245b9] text-white rounded-md"
+                    disabled={!adoptionMessage.trim() || adoptionStatus === "submitting"}
+                  >
+                    {adoptionStatus === "submitting" ? "Submitting..." : "Submit Request"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

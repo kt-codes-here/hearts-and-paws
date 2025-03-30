@@ -9,12 +9,14 @@ interface Pet {
   age: number;
   size: string;
   gender: string;
+  status: string;
   color: string;
   location: string;
   images: string[];
   mainImage: string | null;
   story: string;
   additionalInfo?: string;
+  isAdopted: boolean;
   shotsUpToDate: boolean;
   address: {
     line1: string;
@@ -42,11 +44,11 @@ interface Pet {
 
 const fetchPetData = async (id: string): Promise<Pet | null> => {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
     const response = await fetch(`${baseUrl}/api/pets/${id}?t=${Date.now()}`, {
-      cache: 'no-store',
+      cache: "no-store",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -57,7 +59,7 @@ const fetchPetData = async (id: string): Promise<Pet | null> => {
 
     const data = await response.json();
     console.log("Fetched pet data:", data);
-    
+
     // Transform the data to match the expected format
     const transformedPet: Pet = {
       id: data.id,
@@ -66,6 +68,8 @@ const fetchPetData = async (id: string): Promise<Pet | null> => {
       age: Number(data.age),
       size: data.size,
       gender: data.gender,
+      status: data.status,
+      isAdopted: data.isAdopted,
       color: data.colors, // Make sure this is mapped correctly
       location: `${data.city}, ${data.postcode}`,
       images: data.images.filter(Boolean), // Filter out any empty strings or null values
@@ -83,27 +87,19 @@ const fetchPetData = async (id: string): Promise<Pet | null> => {
         week22: data.shotsUpToDate ? "Complete" : "Incomplete",
       },
       shotsUpToDate: data.shotsUpToDate,
-      traits: [
-        data.goodWithDogs && "Good with dogs",
-        data.goodWithCats && "Good with cats",
-        data.goodWithKids && "Good with kids",
-        data.houseTrained && "House trained",
-        data.microchipped && "Microchipped",
-        data.shotsUpToDate && "Shots up to date",
-        data.specialNeeds && "Special needs",
-        data.behavioralIssues && "Has behavioral issues",
-        data.purebred && "Purebred",
-      ].filter(Boolean) as string[],
+      traits: [data.goodWithDogs && "Good with dogs", data.goodWithCats && "Good with cats", data.goodWithKids && "Good with kids", data.houseTrained && "House trained", data.microchipped && "Microchipped", data.shotsUpToDate && "Shots up to date", data.specialNeeds && "Special needs", data.behavioralIssues && "Has behavioral issues", data.purebred && "Purebred"].filter(Boolean) as string[],
       owner: {
         name: data.owner.name,
         email: data.owner.email,
         profileImage: data.owner.profileImage || null, // Use null instead of empty string
       },
-      rehomeInfo: data.rehomeInfo ? {
-        reason: data.rehomeInfo.reason,
-        durationToKeepPet: data.rehomeInfo.durationToKeepPet,
-        listedDate: data.rehomeInfo.listedDate,
-      } : undefined,
+      rehomeInfo: data.rehomeInfo
+        ? {
+            reason: data.rehomeInfo.reason,
+            durationToKeepPet: data.rehomeInfo.durationToKeepPet,
+            listedDate: data.rehomeInfo.listedDate,
+          }
+        : undefined,
     };
 
     return transformedPet;
