@@ -37,7 +37,10 @@ const user = {
     phone: '702-684-2621',
     address: 'Las Vegas 1028 Hall Street',
     instagram: 'samanta.s16',
-    bio: '',
+    bio: `Hello, I am Samanta, 27 years old.
+    I live with my husband and Papi (my dog).
+    Papi has been living with us for 5 years and needs a friend and playmate.
+    That's why now that we have a yard, we thought of adopting a dog.`,
     profileImage: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-09%20at%209.17.11%E2%80%AFPM-w8ubFc8nDHhAJuTrvzoN9v94AawTMc.png',
     recentActivity: [
         'Adopted a dog from the local shelter.',
@@ -50,13 +53,6 @@ const user = {
 const UserProfile = (props: Props) => {
     const [userData, setUserData] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-  const [bio, setBio] = useState(user.bio || "");
-
-  const handleSave = () => {
-    // TODO: Save the bio to the backend (API call)
-    setIsEditing(false);
-  };
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -124,52 +120,12 @@ const UserProfile = (props: Props) => {
       {/* Main Profile Content */}
       <div className="w-full lg:w-3/4 bg-white p-6 rounded-lg shadow-lg">
         {/* Bio Section */}
-        {/* <div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg">
+        <div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg">
           <h3 className="font-semibold text-xl text-indigo-700">About Me</h3>
           <p className="text-gray-700">
             {user.bio}
           </p>
-        </div> */}
-
-<div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg">
-      <h3 className="font-semibold text-xl text-indigo-700 flex justify-between">
-        About Me
-        {!isEditing && ( // Show "Edit" button only when not editing
-          <button 
-            onClick={() => setIsEditing(true)} 
-            className="text-indigo-600 text-sm hover:underline"
-          >
-            Edit
-          </button>
-        )}
-      </h3>
-
-      {isEditing ? (
-        <div>
-          <textarea
-            className="w-full p-2 mt-2 border rounded-lg"
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Write something about yourself..."
-          />
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setIsEditing(false)}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
-      ) : (
-        <p className="text-gray-700 mt-2">{bio || "Write something about yourself..."}</p>
-      )}
-    </div>
 
         <div className="mt-6 bg-gray-50 p-6 rounded-lg shadow-md">
           <h3 className="font-semibold text-xl text-indigo-700">My Pets</h3>
@@ -200,12 +156,11 @@ const UserProfile = (props: Props) => {
 
         <div className="mt-6 p-6 bg-gray-50 rounded-xl shadow-lg">
           <h3 className="font-semibold text-xl text-indigo-700">Recent Activity</h3>
-          <p className='mt-3'>No Recent Activity</p>
-          {/* <ul className="list-disc pl-5 space-y-2 text-gray-700">
+          <ul className="list-disc pl-5 space-y-2 text-gray-700">
             {user.recentActivity.map((activity, index) => (
               <li key={index} className='hover:bg-gray-100 p-2 rounded-md transition duration-300'>{activity}</li>
             ))}
-          </ul> */}
+          </ul>
         </div>
 
       
