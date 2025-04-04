@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser, SignOutButton, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,6 +11,7 @@ const Header = () => {
   const { user } = useUser();
   const [open, setOpen] = useState(false);
   const [userRole, setUserRole] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -22,6 +23,16 @@ const Header = () => {
         .catch((err) => console.error("Error fetching user role:", err));
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="bg-white shadow-md sticky z-10 top-0">
@@ -107,14 +118,14 @@ const Header = () => {
               </SignInButton>
             </SignedOut>
           ) : (
-            <div className="relative">
+            <div className="relative"  ref={menuRef}>
               <Image
                 src={user.imageUrl}
                 alt="Profile"
                 width={40}
                 height={40}
                 className="rounded-full cursor-pointer"
-                onClick={() => setOpen(!open)}
+                onClick={() => setOpen((prev) => !prev)}
               />
               {open && (
                 <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md p-2">
