@@ -30,50 +30,78 @@ type User = {
 };
 
 
-const user = {
-    name: 'Samanta Smith',
-    location: 'California',
-    email: 'samantasmith@gmail.com',
-    phone: '702-684-2621',
-    address: 'Las Vegas 1028 Hall Street',
-    instagram: 'samanta.s16',
-    bio: '',
-    profileImage: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-09%20at%209.17.11%E2%80%AFPM-w8ubFc8nDHhAJuTrvzoN9v94AawTMc.png',
-    recentActivity: [
-        'Adopted a dog from the local shelter.',
-        'Updated bio to reflect new pet adoption.',
-        'Joined the Furry Friends Charity event.'
-      ],
-      pets: ['Papi'],
-  }
 
 const UserProfile = (props: Props) => {
     const [userData, setUserData] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-  const [bio, setBio] = useState(user.bio || "");
+    
+    // Separate edit states
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [isEditingContact, setIsEditingContact] = useState(false);
 
-  const handleSave = () => {
-    // TODO: Save the bio to the backend (API call)
-    setIsEditing(false);
-  };
+  // Separate state for editing
+  const [updatedBio, setUpdatedBio] = useState('');
+  const [updatedContact, setUpdatedContact] = useState<User | null>(null);
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await fetch("/api/auth/user");
-                if (!res.ok) throw new Error("Failed to fetch user data");
-                const data = await res.json();
-                setUserData(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    const fetchUser = async () => {
+        try {
+            const res = await fetch("/api/auth/user");
+            if (!res.ok) throw new Error("Failed to fetch user data");
+            const data = await res.json();
+            setUserData(data);
+             setUpdatedBio(data.bio);
+        setUpdatedContact(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchUser();
-    }, []);
+    fetchUser();
+}, []);
+
+const handleSaveBio = async () => {
+  if (!userData) return;
+  try {
+    const res = await fetch("/api/auth/user/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bio: updatedBio }),
+    });
+
+    if (!res.ok) throw new Error("Failed to update bio");
+
+    setUserData((prev) => prev ? { ...prev, bio: updatedBio } : null);
+    setIsEditingBio(false);
+  } catch (error) {
+    console.error("Error updating bio:", error);
+  }
+};
+
+const handleSaveContact = async () => {
+  if (!updatedContact) return;
+  try {
+    const res = await fetch("/api/auth/user/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        // email: updatedContact.email,
+        phone: updatedContact.phone,
+        address: updatedContact.address,
+        instagram: updatedContact.instagram,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to update contact info");
+
+    setUserData(updatedContact);
+    setIsEditingContact(false);
+  } catch (error) {
+    console.error("Error updating contact info:", error);
+  }
+};
 
     console.log("USERRRRRR ", userData)
     if (loading) return <p>Loading...</p>;
@@ -91,84 +119,133 @@ const UserProfile = (props: Props) => {
             />
             {/* <AvatarFallback>{userData.name.slice(0, 2)}</AvatarFallback> */}
           </Avatar>
-          <h2 className="text-2xl font-bold text-gray-800">{userData.firstName} {userData.lastName}</h2>
-          <p className="text-gray-600 text-sm">{user.location}</p>
-          <Button variant="outline" className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 mt-4">
+          
+            <h2 className="text-2xl font-bold text-gray-800">{userData.firstName} {userData.lastName}</h2>
+
+          
+          {/* <p className="text-gray-600 text-sm">{user.location}</p> */}
+          <Button onClick={() => setIsEditingContact(true)} variant="outline" className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 mt-4">
             <Edit3 className="w-4 h-4 mr-1" /> Edit Profile
           </Button>
         </div>
 
         <div className="space-y-4">
           <h3 className="font-semibold text-lg text-gray-700">Contact Info</h3>
-          <div className="flex flex-col space-y-3">
-            <div className="flex items-center space-x-3">
-              <Mail className="w-5 h-5 text-gray-600" />
-              <span className="text-gray-800">{userData.email}</span>
+          {isEditingContact ? (
+            <div className="space-y-2">
+              <p><Mail className="inline-block w-5 h-5 mr-2 text-gray-600" /> {userData.email}</p>
+              {/* <input
+                type="email"
+                
+                value={updatedContact?.email ?? ""}
+                onChange={(e) =>
+                  setUpdatedContact((prev) => prev ? { ...prev, email: e.target.value } : null)
+                }
+                className="border p-2 rounded-lg w-full"
+              /> */}
+
+              <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
+              <input
+              id="phone"
+                type="text"
+                value={updatedContact?.phone ?? ""}
+                onChange={(e) =>
+                  setUpdatedContact((prev) => prev ? { ...prev, phone: e.target.value } : null)
+                }
+                className="border p-2 rounded-lg w-full"
+              />
+              </div>
+              <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
+              <input
+              id='address'
+                type="text"
+                value={updatedContact?.address ?? ""}
+                onChange={(e) =>
+                  setUpdatedContact((prev) => prev ? { ...prev, address: e.target.value } : null)
+                }
+                className="border p-2 rounded-lg w-full"
+                />
+                </div>
+
+                <div>
+              <label htmlFor="instagram" className="block text-sm font-medium text-gray-700">Instagram</label>
+              <input
+              id='instagram'
+                type="text"
+                value={updatedContact?.instagram ?? ""}
+                onChange={(e) =>
+                  setUpdatedContact((prev) => prev ? { ...prev, instagram: e.target.value } : null)
+                }
+                className="border p-2 rounded-lg w-full"
+                />
+                </div>
+
+              {/* Save/Cancel Buttons */}
+              <div className="mt-4 flex gap-2">
+                <Button onClick={handleSaveContact} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                  Save
+                </Button>
+                <Button onClick={() => setIsEditingContact(false)} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                  Cancel
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Phone className="w-5 h-5 text-gray-600" />
-              <span className="text-gray-800">{user.phone}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <MapPin className="w-5 h-5 text-gray-600" />
-              <span className="text-gray-800">{user.address}</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Instagram className="w-5 h-5 text-gray-600" />
-              <span className="text-gray-800">{user.instagram}</span>
-            </div>
-          </div>
+          ) : (
+            <>
+              <p><Mail className="inline-block w-5 h-5 mr-2 text-gray-600" /> {userData.email}</p>
+              <p>
+    <Phone className="inline-block w-5 h-5 mr-2 text-gray-600" />
+    {userData.phone ? userData.phone : <span className="text-gray-400 italic">Enter your phone number</span>}
+  </p>
+  <p>
+    <MapPin className="inline-block w-5 h-5 mr-2 text-gray-600" />
+    {userData.address ? userData.address : <span className="text-gray-400 italic">Update your address</span>}
+  </p>
+  <p>
+    <Instagram className="inline-block w-5 h-5 mr-2 text-gray-600" />
+    {userData.instagram ? userData.instagram : <span className="text-gray-400 italic">Let people know your social media</span>}
+  </p>              </>
+              )}
+          
         </div>
       </div>
 
       {/* Main Profile Content */}
       <div className="w-full lg:w-3/4 bg-white p-6 rounded-lg shadow-lg">
         {/* Bio Section */}
-        {/* <div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg">
-          <h3 className="font-semibold text-xl text-indigo-700">About Me</h3>
-          <p className="text-gray-700">
-            {user.bio}
-          </p>
-        </div> */}
 
 <div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg">
       <h3 className="font-semibold text-xl text-indigo-700 flex justify-between">
         About Me
-        {!isEditing && ( // Show "Edit" button only when not editing
-          <button 
-            onClick={() => setIsEditing(true)} 
-            className="text-indigo-600 text-sm hover:underline"
-          >
-            Edit
-          </button>
-        )}
-      </h3>
+</h3>
+        {isEditingBio ? (
+            <div>
+              <textarea
+                className="w-full p-2 mt-2 border rounded-lg"
+                value={updatedBio}
+                onChange={(e) => setUpdatedBio(e.target.value)}
+              />
+              <div className="mt-4 flex gap-2">
+                <Button onClick={handleSaveBio} className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                  Save
+                </Button>
+                <Button onClick={() => setIsEditingBio(false)} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-gray-700 mt-2">{userData.bio || "Write something about yourself..."}</p>
+              <Button onClick={() => setIsEditingBio(true)} variant="outline" className="mt-4 text-indigo-600 hover:bg-indigo-50">
+                <Edit3 className="w-4 h-4 mr-1" /> Edit Bio
+              </Button>
+            </>
+          )}
+     
 
-      {isEditing ? (
-        <div>
-          <textarea
-            className="w-full p-2 mt-2 border rounded-lg"
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Write something about yourself..."
-          />
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setIsEditing(false)}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-gray-700 mt-2">{bio || "Write something about yourself..."}</p>
-      )}
     </div>
 
         <div className="mt-6 bg-gray-50 p-6 rounded-lg shadow-md">
