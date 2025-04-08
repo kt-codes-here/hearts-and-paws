@@ -272,7 +272,7 @@ export default function ServiceProviderDashboard() {
                 {apt.status === 'pending' && (
                   <div className="flex space-x-4 mt-2">
                     <button
-                      onClick={() => updateAppointmentStatus(apt.id, "confirmed")}
+                      onClick={() => updateAppointmentStatus(apt.id, "accepted")}
                       className="bg-green-600 text-white px-4 py-2 rounded"
                     >
                       Accept
