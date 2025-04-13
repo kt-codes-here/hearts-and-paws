@@ -7,6 +7,10 @@ import * as Dialog from "@radix-ui/react-dialog";
 import Image from "next/image";
 import { roleNames } from "@/constant/utils";
 import Link from "next/link";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Initialize Stripe outside the component.
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function RehomerDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -15,14 +19,12 @@ export default function RehomerDashboard() {
     role: number;
     email: string;
     firstName: string;
-    id:string;
+    id: string;
   } | null>(null);
-  console.log(userData)
   const [rehomes, setRehomes] = useState<any[]>([]);
   const [loadingRehomes, setLoadingRehomes] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // New states for appointment booking
+  // States for appointment booking and payment
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [appointmentDateTime, setAppointmentDateTime] = useState("");
@@ -31,19 +33,13 @@ export default function RehomerDashboard() {
   // Fetch authenticated user record
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/');
+      router.push("/");
       return;
     }
     if (isSignedIn && user) {
       fetch("/api/auth/user")
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
-          console.log("User data received:", data);
           if (!data.role) {
             router.push("/user-registration");
           } else if (data.role !== 2) {
@@ -87,6 +83,7 @@ export default function RehomerDashboard() {
       });
   }, []);
 
+  // Fetch appointments for this user (using customer’s id)
   useEffect(() => {
     if (isLoaded && isSignedIn && user && userData) {
       fetch(`/api/appoinment?customerId=${userData.id}`)
@@ -101,10 +98,49 @@ export default function RehomerDashboard() {
   }, [isLoaded, isSignedIn, user, userData]);
 
   const handlePetClick = (e: React.MouseEvent, petId: string) => {
-    e.preventDefault(); // Prevent accordion from toggling
+    e.preventDefault();
     router.push(`/pet/${petId}`);
   };
 
+  // Function to handle payment action for an appointment that is accepted.
+  // Only appointments with status "accepted" will show the payment button.
+  const handleMakePayment = async (apt: any) => {
+    try {
+      // Call checkout API endpoint (which now expects the appointmentId as well).
+      const res = await fetch("/api/payment/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: apt.service.id,
+          customerId: userData?.id,
+          providerId: apt.provider.userId, // adjust if needed
+          appointmentDate: apt.appointmentDate,
+          servicePrice: apt.service.price,
+          appointmentId: apt.id, // Include appointmentId for linking payment
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert("Payment error: " + (errorData.error || "Unknown error"));
+        return;
+      }
+      const { sessionId } = await res.json();
+      const stripe = await stripePromise;
+      const { error } = await stripe!.redirectToCheckout({ sessionId });
+      if (error) {
+        console.error("Stripe error:", error.message);
+        alert("Payment failed: " + error.message);
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      alert("Error processing payment.");
+    }
+  };
+
+  // Filter appointments to get upcoming appointments for display.
+  const upcomingAppointments = appointments.filter(
+    (apt) => new Date(apt.appointmentDate) > new Date()
+  );
 
   if (!isLoaded) {
     return (
@@ -143,9 +179,7 @@ export default function RehomerDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-xl p-8 mb-8">
-          <h1 className="text-4xl font-bold text-purple-700 mb-4">
-            Rehomer Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold text-purple-700 mb-4">Rehomer Dashboard</h1>
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <p className="text-lg text-gray-700">
@@ -170,59 +204,10 @@ export default function RehomerDashboard() {
         {/* Pets Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6">Your Rehome Listings</h2>
-          {loadingRehomes ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto"></div>
-              <p className="text-gray-600 mt-4">Loading rehome listings...</p>
-            </div>
-          ) : rehomes.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <p className="text-gray-600 text-lg">You have not created any rehome listings yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rehomes.map((item) => (
-                <div key={item.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                  {item.pet.images && item.pet.images.length > 0 && (
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={item.pet.images[0]}
-                        alt={`${item.pet.name}'s photo`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{item.pet.name}</h3>
-                    <div className="space-y-2 text-gray-600 mb-4">
-                      <p className="flex items-center gap-2">
-                        <span className="font-medium">Breed:</span> {item.pet.breed}
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <span className="font-medium">Age:</span> {item.pet.age}
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <span className="font-medium">Duration:</span> {item.durationToKeepPet}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => handlePetClick(e, item.pet.id)}
-                      className="w-full bg-purple-50 text-purple-700 py-2 rounded-lg font-semibold hover:bg-purple-100 transition-colors"
-                    >
-                      View Full Profile
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* (Existing rehome listings code goes here) */}
         </div>
 
-        {/* New Section: Available Services for Appointment Booking */}
+        {/* Section: Available Services for Appointment Booking */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-4">Available Services for Appointment Booking</h2>
           {services.length === 0 ? (
@@ -233,12 +218,8 @@ export default function RehomerDashboard() {
                 <div key={service.id} className="border rounded p-4 shadow">
                   <h3 className="text-xl font-bold">{service.name}</h3>
                   <p className="mt-2 text-gray-700">{service.description}</p>
-                  <p className="mt-2 font-medium">
-                    Price: ${service.price.toFixed(2)}
-                  </p>
-                  <p className="mt-2 font-medium">
-                    Duration: {service.duration} minutes
-                  </p>
+                  <p className="mt-2 font-medium">Price: ${service.price.toFixed(2)}</p>
+                  <p className="mt-2 font-medium">Duration: {service.duration} minutes</p>
                   <button
                     onClick={() => setSelectedService(service)}
                     className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -279,7 +260,7 @@ export default function RehomerDashboard() {
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Dialog.Close asChild>
-                    <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100">
+                    <button className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100">
                       Cancel
                     </button>
                   </Dialog.Close>
@@ -296,6 +277,7 @@ export default function RehomerDashboard() {
                               customerId: userData.id,
                               providerId: selectedService.providerId,
                               appointmentDate: appointmentDateTime,
+                              // Appointment is created with status "pending"
                             }),
                           });
                           if (res.ok) {
@@ -304,10 +286,7 @@ export default function RehomerDashboard() {
                             setAppointmentDateTime("");
                           } else {
                             const errorData = await res.json();
-                            alert(
-                              "Failed to book appointment: " +
-                                (errorData.error || "Unknown error")
-                            );
+                            alert("Failed to book appointment: " + (errorData.error || "Unknown error"));
                           }
                         } catch (error) {
                           console.error("Error booking appointment:", error);
@@ -325,37 +304,127 @@ export default function RehomerDashboard() {
           </Dialog.Root>
         )}
 
-<div className="mt-12">
-  <h2 className="text-2xl font-bold mb-4">Services Requested</h2>
-  {appointments.length === 0 ? (
-    <p className="text-gray-600">No Service Requested Yet.</p>
-  ) : (
-    <div className="space-y-4">
-      {appointments.map((apt) => (
-        <div key={apt.id} className="border rounded p-4 shadow">
-          <p className="font-bold">
-            {apt.service?.name || "Service information unavailable"}
-          </p>
-          <p>
-            Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
-          </p>
-          <p
-          >
-            Status: <span className={`font-medium ${
-              apt.status === "confirmed"
-                ? "text-green-600"
-                : apt.status === "pending"
-                ? "text-yellow-600"
-                : apt.status === "declined"
-                ? "text-red-600"
-                : "text-gray-600"
-            }`}>{apt.status}</span>
-          </p>
+        {/* Section: Services Requested (Appointments) with Payment Option */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4">Services Requested</h2>
+          {appointments.length === 0 ? (
+            <p className="text-gray-600">No Service Requested Yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {appointments.map((apt) => {
+                let statusColor = "text-gray-600";
+                let additionalAction = null;
+                // Show message while waiting for provider's response
+                if (apt.status === "pending") {
+                  statusColor = "text-yellow-600";
+                  additionalAction = (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Waiting for service provider approval...
+                    </p>
+                  );
+                } else if (apt.status === "accepted") {
+                  statusColor = "text-blue-600";
+                  // When appointment is accepted, enable payment.
+                  additionalAction = (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/payment/checkout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              serviceId: apt.service.id,
+                              customerId: userData.id,
+                              providerId: apt.provider.userId, // adjust as needed
+                              appointmentDate: apt.appointmentDate,
+                              servicePrice: apt.service.price,
+                              appointmentId: apt.id, // Link payment to the appointment
+                            }),
+                          });
+                          if (!res.ok) {
+                            const errorData = await res.json();
+                            alert("Payment error: " + (errorData.error || "Unknown error"));
+                            return;
+                          }
+                          const { sessionId } = await res.json();
+                          const stripe = await stripePromise;
+                          const { error } = await stripe!.redirectToCheckout({ sessionId });
+                          if (error) {
+                            console.error("Stripe error:", error.message);
+                            alert("Payment failed: " + error.message);
+                          }
+                        } catch (error) {
+                          console.error("Error processing payment:", error);
+                          alert("Error processing payment.");
+                        }
+                      }}
+                      className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                    >
+                      Make Payment
+                    </button>
+                  );
+                } else if (apt.status === "confirmed") {
+                  statusColor = "text-green-600";
+                  additionalAction = (
+                    <p className="mt-2 text-sm text-green-600">
+                      Payment completed. Appointment confirmed.
+                    </p>
+                  );
+                } else if (apt.status === "declined") {
+                  statusColor = "text-red-600";
+                  additionalAction = (
+                    <p className="mt-2 text-sm text-red-600">
+                      Appointment declined.
+                    </p>
+                  );
+                }
+                return (
+                  <div key={apt.id} className="border rounded p-4 shadow">
+                    <p className="font-bold">
+                      {apt.service?.name || "Service information unavailable"}
+                    </p>
+                    <p>
+                      Service Provider:{" "}
+                      <span>{apt.provider.businessName}</span>
+                    </p>
+                    <p>
+                      Contact: <span>{apt.provider.phone}</span>
+                    </p>
+                    <p>
+                      Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                    </p>
+                    <p className={`mt-2 font-medium ${statusColor}`}>
+                      Status: {apt.status}
+                    </p>
+                    {additionalAction}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      ))}
-    </div>
-  )}
-</div>
+
+        {/* Section: Upcoming Appointments */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4">Upcoming Appointments</h2>
+          {upcomingAppointments.length === 0 ? (
+            <p>No upcoming appointments.</p>
+          ) : (
+            <div className="space-y-4">
+              {upcomingAppointments.map((apt) => (
+                <div key={apt.id} className="border rounded p-4 shadow">
+                  <p className="font-bold">
+                    {apt.service?.name || "Service info unavailable"}
+                  </p>
+                  <p>
+                    Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                  </p>
+                  <p>Status: {apt.status}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

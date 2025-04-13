@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       // For pet owners: fetch appointments they have requested
       appointments = await prisma.appointment.findMany({
         where: { customerId },
-        include: { service: true },
+        include: { service: true , provider:true}
       });
     } else {
       return NextResponse.json({ error: "providerId or customerId query parameter is required" }, { status: 400 });

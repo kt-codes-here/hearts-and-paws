@@ -1,4 +1,3 @@
-// app/rehomer-dashboard/pet-registration/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -35,7 +34,7 @@ export interface PetFormInputs {
   postcode: string;
   files: File[]; 
   petStory: string; // NEW
-  images: string;   // Reuse for documents
+  images: string;   // For documents/images storage
   reason: string;
   durationToKeepPet: string;
 }
@@ -52,22 +51,10 @@ const stepTitles = [
 export default function PetRegistrationPage() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
-  
-  // Add debugging for component mounting
-  useEffect(() => {
-    console.log('Pet Registration Page Mounted');
-  }, []);
 
-  // Add authentication check
-  useEffect(() => {
-    console.log('Auth State:', { isLoaded, isSignedIn });
-    if (isLoaded) {
-      if (!isSignedIn) {
-        console.log('User not signed in, redirecting...');
-        router.push('/');
-      }
-    }
-  }, [isLoaded, isSignedIn, router]);
+  // New states for submission feedback
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionComplete, setSubmissionComplete] = useState(false);
 
   const methods = useForm<PetFormInputs>({
     defaultValues: {
@@ -90,8 +77,8 @@ export default function PetRegistrationPage() {
       addressLine2: "",
       city: "",
       postcode: "",
-      petStory: "",   // new
-      images: "",     // for docs
+      petStory: "",
+      images: "",
       reason: "",
       durationToKeepPet: "",
     },
@@ -103,28 +90,19 @@ export default function PetRegistrationPage() {
   const [step, setStep] = useState<number>(-1);
   const totalSteps = stepTitles.length;
 
-  // Terms
+  // Terms acceptance state
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const onSubmit: SubmitHandler<PetFormInputs> = async (data) => {
     if (step === totalSteps - 1) {
-      // Final step => do everything, including GCP upload
-      const { files } = data;
-  
-      // Enforce min 1 file
-      if (!files || files.length < 1) {
-        alert("Please upload at least 1 image.");
-        return;
-      }
-  
+      // Final step => perform final submission process
+      setIsSubmitting(true);
       try {
-        // 1) Upload the files to GCP (client -> server)
-        //    We'll send them to an API route, e.g. /api/upload-gcp
+        // 1) Upload files to GCP (simulate or implement your upload logic)
         const formData = new FormData();
-        files.forEach((file) => {
+        data.files.forEach((file) => {
           formData.append("files", file);
         });
-  
         const uploadRes = await fetch("/api/upload-gcp", {
           method: "POST",
           body: formData,
@@ -133,39 +111,39 @@ export default function PetRegistrationPage() {
           throw new Error("Failed to upload images to GCP.");
         }
         const uploadData = await uploadRes.json();
-        const gcpUrls = uploadData.urls; // array of public URLs
-  
-        // 2) Convert the array to a comma-separated string or keep as array
-        const imageString = gcpUrls.join(", ");
-        data.images = imageString;
-  
-        // 3) Now proceed to create the pet in DB
-        const payload = { ...data, images: gcpUrls }; 
-        // or if your DB expects images as an array, pass the array
-        // or if your DB expects images as a string, pass imageString
-  
+        const gcpUrls: string[] = uploadData.urls;
+        // Convert the array to a string if needed, here we pass the array
+        data.images = gcpUrls.join(", ");
+
+        // 2) Create the pet record in your database
+        const payload = { ...data, images: gcpUrls };
         const res = await fetch("/api/auth/pet-registration", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-  
         if (res.ok) {
-          router.push("/rehomer-dashboard");
+          setIsSubmitting(false);
+          setSubmissionComplete(true);
+          // Delay before redirecting to allow user to see completion message
+          setTimeout(() => {
+            router.push("/rehomer-dashboard");
+          }, 2000);
         } else {
           const errData = await res.json();
+          setIsSubmitting(false);
           alert(errData.error || "Error registering pet.");
         }
       } catch (err) {
         console.error("Submission error:", err);
+        setIsSubmitting(false);
         alert("An unexpected error occurred.");
       }
     } else {
-      // Not final step => just go to the next step
+      // Not final step => advance to next step
       setStep((prev) => prev + 1);
     }
   };
-  
 
   const handleBack = () => {
     if (step > 0) {
@@ -183,12 +161,37 @@ export default function PetRegistrationPage() {
     );
   }
 
+  if (isSubmitting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-700"></div>
+        <p className="mt-4 text-xl font-semibold">Registering pet...</p>
+      </div>
+    );
+  }
+
+  if (submissionComplete) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-24 w-24 text-green-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <p className="mt-4 text-3xl font-bold text-green-600">Registration Completed!</p>
+      </div>
+    );
+  }
+
   // Intro screen
   if (step === -1) {
     const userEmail = user?.emailAddresses[0]?.emailAddress || "";
     const userFirstName = user?.firstName || "";
     const userLastName = user?.lastName || "";
-
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto bg-white shadow-md rounded-lg p-8">
@@ -276,13 +279,12 @@ export default function PetRegistrationPage() {
 
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {step === 0 && <Step1 />}  {/* Pet Details */}
-            {step === 1 && <Step2 />}  {/* Health & Behavior */}
-            {step === 2 && <Step3 />}  {/* Location */}
-            {step === 3 && <Step4 />}  {/* Pet's Story (new) */}
-            {step === 4 && <Step5 />}  {/* Documents (new) */}
-            {step === 5 && <Step6 />}  {/* Rehome Details */}
-
+            {step === 0 && <Step1 />}
+            {step === 1 && <Step2 />}
+            {step === 2 && <Step3 />}
+            {step === 3 && <Step4 />}
+            {step === 4 && <Step5 />}
+            {step === 5 && <Step6 />}
             <div className="flex justify-between">
               {step > 0 && (
                 <button
