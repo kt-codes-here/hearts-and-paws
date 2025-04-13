@@ -5,7 +5,7 @@ import Stripe from "stripe";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2022-11-15" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-03-31.basil" });
 
 export async function POST(request: Request) {
   try {
