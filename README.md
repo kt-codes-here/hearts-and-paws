@@ -77,4 +77,4 @@ Follow these steps to set up the project locally:
 - Always pull the latest changes from `dev` before starting a new feature.
 - Ensure all code follows the project's linting and formatting rules.
 - Run Prisma migrations when modifying the database schema.
-- Write meaningful commit messages and PR descriptions. Test
+- Write meaningful commit messages and PR descriptions.
