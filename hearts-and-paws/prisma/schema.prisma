@@ -193,10 +193,11 @@ model Payment {
   customer       User         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   amount         Float
   currency       String
-  status         String       // e.g., "pending", "completed", "failed", "refunded"
-  method         String?      // e.g., "stripe", "paypal"
-  transactionId  String?      // External transaction ID returned by the payment processor
-  invoiceUrl     String?      // URL to the generated invoice PDF, if applicable
+  status         String       // e.g., "pending", "completed", etc.
+  method         String?      
+  transactionId  String?      
+  invoiceUrl     String?      // (if used for a URL; not used in this example)
+  invoicePdf     String?      // <-- New field to store the generated PDF (Base64 encoded)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }

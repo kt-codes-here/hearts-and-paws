@@ -12,7 +12,7 @@ export default function PaymentSuccess() {
   useEffect(() => {
     async function confirmPayment() {
       if (!sessionId) {
-        router.push("/dashboard");
+        router.push("/rehomer-dashboard");
         return;
       }
       try {
@@ -32,7 +32,7 @@ export default function PaymentSuccess() {
         setLoading(false);
         // Redirect after showing success message for 2 seconds.
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/rehomer-dashboard");
         }, 2000);
       } catch (error) {
         console.error("Error confirming payment:", error);

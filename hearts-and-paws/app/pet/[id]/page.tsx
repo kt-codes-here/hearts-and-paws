@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import PetProfile from "@/components/global/pet-profile";
 
-// Define the Pet interface based on our schema
 interface Pet {
   id: string;
   name: string;
