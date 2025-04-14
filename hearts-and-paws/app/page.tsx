@@ -1,6 +1,6 @@
 "use client";
 
-import PetList from "@/components/ui/petList"; 
+import PetList from "@/components/ui/petList";
 import PetServiceStatic from "@/components/global/static/pet-service-static";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,15 +83,18 @@ export default function Home() {
           <div className="md:w-1/2 text-center md:text-left">
             <h2 className="text-4xl font-bold text-gray-900">Give a New Life to</h2>
             <h3 className="text-3xl font-semibold text-purple-600 mt-2">Hearts & Paws</h3>
-            <p className="text-gray-700 mt-4">
-              Pet adoption and rehoming are both vital aspects of animal welfare, offering hope and a fresh start to pets in need.
-              Open your heart and your home to a shelter pet.
-            </p>
+            <p className="text-gray-700 mt-4">Pet adoption and rehoming are both vital aspects of animal welfare, offering hope and a fresh start to pets in need. Open your heart and your home to a shelter pet.</p>
             <div className="mt-6 flex gap-4 justify-center md:justify-start">
-              <Link href="/pet-listing" className="bg-purple-600 text-white px-6 py-3 rounded-md text-lg hover:bg-purple-700">
+              <Link
+                href="/pet-listing"
+                className="bg-purple-600 text-white px-6 py-3 rounded-md text-lg hover:bg-[#675bc8]"
+              >
                 Adopt Now
               </Link>
-              <Link href="/rehomer-dashboard" className="border border-purple-600 text-purple-600 px-6 py-3 rounded-md text-lg hover:bg-purple-100">
+              <Link
+                href="/rehomer-dashboard"
+                className="border border-purple-600 text-purple-600 px-6 py-3 rounded-md text-lg hover:bg-[#675bc8]"
+              >
                 Rehome Now
               </Link>
             </div>
@@ -100,7 +103,12 @@ export default function Home() {
           {/* Right Image */}
           <div className="md:w-1/2 flex justify-center relative">
             <div className="relative w-[400px] h-[400px]">
-              <Image src="/1-section.png" alt="Dog and Cat" fill style={{ objectFit: "contain" }} />
+              <Image
+                src="/1-section.png"
+                alt="Dog and Cat"
+                fill
+                style={{ objectFit: "contain" }}
+              />
             </div>
           </div>
         </section>
@@ -110,11 +118,18 @@ export default function Home() {
           <h3 className="text-2xl text-green-600 mt-2">3 Easy Steps</h3>
           <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-8">
             {steps.map((step) => (
-              <div key={step.id} className="flex flex-col items-center bg-white border-2 border-cardBackground shadow-lg rounded-lg p-6 w-80 h-300 relative">
-                <div className="absolute -top-6 bg-purple-200 text-purple-800 font-bold rounded-full w-12 h-12 flex items-center justify-center">
-                  {step.id}
-                </div>
-                <Image className="m-4" src={step.icon} alt={`Step ${step.id}`} width={60} height={60} />
+              <div
+                key={step.id}
+                className="flex flex-col items-center bg-white border-2 border-cardBackground shadow-lg rounded-lg p-6 w-80 h-300 relative"
+              >
+                <div className="absolute -top-6 bg-purple-200 text-purple-800 font-bold rounded-full w-12 h-12 flex items-center justify-center">{step.id}</div>
+                <Image
+                  className="m-4"
+                  src={step.icon}
+                  alt={`Step ${step.id}`}
+                  width={60}
+                  height={60}
+                />
                 <p className="text-gray-700 mt-4">{step.text}</p>
               </div>
             ))}
