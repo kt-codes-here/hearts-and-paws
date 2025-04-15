@@ -38,7 +38,7 @@ pipeline {
         script {
           // Get the most recent commit message using the correct --pretty format.
           def commitMessage = bat(
-            script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%B",
+            script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
             returnStdout: true
           ).trim();
           echo "Latest commit message: ${commitMessage}"
