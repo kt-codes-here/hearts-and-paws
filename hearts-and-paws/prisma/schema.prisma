@@ -36,6 +36,8 @@ model User {
   appointments    Appointment[]
   reviews         Review[]
   payments         Payment[]
+  supportTickets SupportTicket[] // ✅ Add this
+
 }
 
 model Pet {
@@ -200,4 +202,16 @@ model Payment {
   invoicePdf     String?      // <-- New field to store the generated PDF (Base64 encoded)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model SupportTicket {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String
+  response  String?
+  status    String   @default("open") // open, in_progress, closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

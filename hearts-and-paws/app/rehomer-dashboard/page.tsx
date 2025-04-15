@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -8,6 +8,8 @@ import Image from "next/image";
 import { roleNames } from "@/constant/utils";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
+import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
+import Countdown from "../../components/ui/countDown"; // adjust the path if stored in a separate file
 
 // Initialize Stripe outside the component only if the key exists
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
@@ -102,21 +104,19 @@ export default function RehomerDashboard() {
     router.push(`/pet/${petId}`);
   };
 
-  // Function to handle payment action for an appointment that is accepted.
-  // Only appointments with status "accepted" will show the payment button.
+  // Function to handle payment action for an accepted appointment.
   const handleMakePayment = async (apt: any) => {
     try {
-      // Call checkout API endpoint (which now expects the appointmentId as well).
       const res = await fetch("/api/payment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceId: apt.service.id,
           customerId: userData?.id,
-          providerId: apt.provider.userId, // adjust if needed
+          providerId: apt.provider.userId, // adjust as needed
           appointmentDate: apt.appointmentDate,
           servicePrice: apt.service.price,
-          appointmentId: apt.id, // Include appointmentId for linking payment
+          appointmentId: apt.id, // Link payment to the appointment
         }),
       });
       if (!res.ok) {
@@ -137,8 +137,16 @@ export default function RehomerDashboard() {
     }
   };
 
-  // Filter appointments to get upcoming appointments for display.
-  const upcomingAppointments = appointments.filter((apt) => new Date(apt.appointmentDate) > new Date());
+  // Separate appointments into two categories:
+  // 1. Requested Appointments: appointments with status NOT "confirmed".
+  const requestedAppointments = appointments.filter(
+    (apt) => apt.status !== "confirmed"
+  );
+  // 2. Upcoming Appointments: appointments with status "confirmed" and a future appointment date.
+  const upcomingAppointments = appointments.filter(
+    (apt) =>
+      apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
+  );
 
   if (!isLoaded) {
     return (
@@ -174,7 +182,7 @@ export default function RehomerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <div className="bg-white shadow-sm rounded-xl p-8 mb-8">
           <h1 className="text-4xl font-bold text-[#675bc8] mb-4">Rehomer Dashboard</h1>
@@ -208,7 +216,7 @@ export default function RehomerDashboard() {
           </div>
         </div>
 
-        {/* Pets Section */}
+        {/* Pets/Rehome Listings Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6">Your Rehome Listings</h2>
           {loadingRehomes ? (
@@ -247,7 +255,7 @@ export default function RehomerDashboard() {
           )}
         </div>
 
-        {/* Section: Available Services for Appointment Booking */}
+        {/* Available Services for Appointment Booking */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-4">Available Services for Appointment Booking</h2>
           {services.length === 0 ? (
@@ -255,17 +263,14 @@ export default function RehomerDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {services.map((service) => (
-                <div
-                  key={service.id}
-                  className="border rounded p-4 shadow"
-                >
+                <div key={service.id} className="border rounded p-4 shadow hover:shadow-lg transition">
                   <h3 className="text-xl font-bold">{service.name}</h3>
                   <p className="mt-2 text-gray-700">{service.description}</p>
                   <p className="mt-2 font-medium">Price: ${service.price.toFixed(2)}</p>
                   <p className="mt-2 font-medium">Duration: {service.duration} minutes</p>
                   <button
                     onClick={() => setSelectedService(service)}
-                    className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    className="mt-4 block w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
                   >
                     Book Appointment
                   </button>
@@ -633,105 +638,67 @@ export default function RehomerDashboard() {
           </Dialog.Root>
         )}
 
-        {/* Section: Services Requested (Appointments) with Payment Option */}
-        <div className="mt-12">
+        {/* Requested Services Section */}
+        <div className="mt-12 bg-white shadow rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Services Requested</h2>
-          {appointments.length === 0 ? (
-            <p className="text-gray-600">No Service Requested Yet.</p>
+          {requestedAppointments.length === 0 ? (
+            <p className="text-gray-600">No service requests at this time.</p>
           ) : (
-            <div className="space-y-4">
-              {appointments.map((apt) => {
-                let statusColor = "text-gray-600";
-                let additionalAction = null;
-                // Show message while waiting for provider's response
-                if (apt.status === "pending") {
-                  statusColor = "text-yellow-600";
-                  additionalAction = <p className="mt-2 text-sm text-gray-500">Waiting for service provider approval...</p>;
-                } else if (apt.status === "accepted") {
-                  statusColor = "text-blue-600";
-                  // When appointment is accepted, enable payment.
-                  additionalAction = (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {requestedAppointments.map((apt) => (
+                <div key={apt.id} className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg">
+                  <p className="font-bold text-lg">
+                    {apt.service?.name || "Service info unavailable"}
+                  </p>
+                  <p className="mt-2 text-gray-700">
+                    Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                  </p>
+                  <p className="mt-2 font-medium text-gray-600">Status: <span className={`${apt.status === "pending" ? "text-yellow-500":"text-blue-500"}`}>{apt.status}</span></p>
+                  {apt.status === "pending" && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Waiting for service provider approval....
+                    </p>
+                  )}
+                  {apt.status === "accepted" && (
                     <button
-                      onClick={async () => {
-                        try {
-                          const res = await fetch("/api/payment/checkout", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              serviceId: apt.service.id,
-                              customerId: userData.id,
-                              providerId: apt.provider.userId, // adjust as needed
-                              appointmentDate: apt.appointmentDate,
-                              servicePrice: apt.service.price,
-                              appointmentId: apt.id, // Link payment to the appointment
-                            }),
-                          });
-                          if (!res.ok) {
-                            const errorData = await res.json();
-                            alert("Payment error: " + (errorData.error || "Unknown error"));
-                            return;
-                          }
-                          const { sessionId } = await res.json();
-                          const stripe = await stripePromise;
-                          const { error } = await stripe!.redirectToCheckout({ sessionId });
-                          if (error) {
-                            console.error("Stripe error:", error.message);
-                            alert("Payment failed: " + error.message);
-                          }
-                        } catch (error) {
-                          console.error("Error processing payment:", error);
-                          alert("Error processing payment.");
-                        }
-                      }}
-                      className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                      onClick={() => handleMakePayment(apt)}
+                      className="mt-4 block w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
                     >
-                      Make Payment
+                      Make payment
                     </button>
-                  );
-                } else if (apt.status === "confirmed") {
-                  statusColor = "text-green-600";
-                  additionalAction = <p className="mt-2 text-sm text-green-600">Payment completed. Appointment confirmed.</p>;
-                } else if (apt.status === "declined") {
-                  statusColor = "text-red-600";
-                  additionalAction = <p className="mt-2 text-sm text-red-600">Appointment declined.</p>;
-                }
-                return (
-                  <div
-                    key={apt.id}
-                    className="border rounded p-4 shadow"
-                  >
-                    <p className="font-bold">{apt.service?.name || "Service information unavailable"}</p>
-                    <p>
-                      Service Provider: <span>{apt.provider.businessName}</span>
+                  )}
+                  {apt.status === "declined" && (
+                    <p className="mt-2 text-sm text-red-600">
+                      Appointment Declined.
                     </p>
-                    <p>
-                      Contact: <span>{apt.provider.phone}</span>
-                    </p>
-                    <p>Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}</p>
-                    <p className={`mt-2 font-medium ${statusColor}`}>Status: {apt.status}</p>
-                    {additionalAction}
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Section: Upcoming Appointments */}
-        <div className="mt-12">
+
+        {/* Upcoming Appointments Section */}
+        <div className="mt-12 bg-white shadow rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Upcoming Appointments</h2>
           {upcomingAppointments.length === 0 ? (
-            <p>No upcoming appointments.</p>
+            <p className="text-gray-600">No upcoming appointments.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {upcomingAppointments.map((apt) => (
-                <div
-                  key={apt.id}
-                  className="border rounded p-4 shadow"
-                >
-                  <p className="font-bold">{apt.service?.name || "Service info unavailable"}</p>
-                  <p>Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}</p>
-                  <p>Status: {apt.status}</p>
+                <div key={apt.id} className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg">
+                  <p className="font-bold text-lg">
+                    {apt.service?.name || "Service info unavailable"}
+                  </p>
+                  <p className="mt-2 text-gray-700">
+                    Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
+                  </p>
+                  <p className="mt-2 font-medium text-green-600">
+                    Status: {apt.status}
+                  </p>
+                  {/* Instead of invoice, show time remaining until appointment */}
+                  <Countdown appointmentDate={apt.appointmentDate} />
                 </div>
               ))}
             </div>
