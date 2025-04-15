@@ -33,31 +33,45 @@ pipeline {
       }
     }
 
-    stage('Extract JIRA Issue from Commit') {
-      steps {
-        script {
-          // Get the most recent commit message using the correct --pretty format.
-          def commitMessage = bat(
-            script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
-            returnStdout: true
-          ).trim();
-          echo "Latest commit message: ${commitMessage}"
+stage('Extract JIRA Issue from Commit') {
+  steps {
+    script {
+      // Run git log with double percent signs for Windows and capture full output.
+      def commitMessageOutput = bat(
+        script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
+        returnStdout: true
+      ).trim();
 
-          // Use a regular expression to extract the JIRA ticket (e.g., 'SCRUM-123').
-          def matcher = commitMessage =~ /(SCRUM-\\d+)/;
-          def jiraKey = matcher ? matcher[0][0] : "";
-          
-          if (jiraKey) {
-            echo "Detected JIRA Issue Key: ${jiraKey}";
-            // Save the JIRA key to an environment variable for use later in the pipeline.
-            env.JIRA_ISSUE_KEY = jiraKey;
-          } else {
-            echo "No JIRA Issue Key detected in commit message.";
-            env.JIRA_ISSUE_KEY = "";
-          }
+      echo "Raw output from git log:\n${commitMessageOutput}";
+
+      // Split the output into lines and take the last non-empty line as the actual commit message.
+      def commitMessageLines = commitMessageOutput.split(/[\r\n]+/);
+      def commitMessage = "";
+      for (int i = commitMessageLines.size() - 1; i >= 0; i--) {
+        if (commitMessageLines[i].trim()) {
+          commitMessage = commitMessageLines[i].trim();
+          break;
         }
       }
+
+      echo "Latest commit message: ${commitMessage}";
+
+      // Use a regular expression to extract the JIRA ticket (e.g., 'SCRUM-35').
+      def matcher = commitMessage =~ /(SCRUM-\d+)/;
+      def jiraKey = matcher ? matcher[0][0] : "";
+      
+      if (jiraKey) {
+        echo "Detected JIRA Issue Key: ${jiraKey}";
+        // Save JIRA key to an environment variable for use later.
+        env.JIRA_ISSUE_KEY = jiraKey;
+      } else {
+        echo "No JIRA Issue Key detected in commit message.";
+        env.JIRA_ISSUE_KEY = "";
+      }
     }
+  }
+}
+
 
     stage('Query JIRA and Notify Slack') {
       when {
