@@ -625,7 +625,7 @@ export default function RehomerDashboard() {
                   <p className="mt-2 font-medium text-gray-600">Status: <span className={`${apt.status === "pending" ? "text-yellow-500":"text-blue-500"}`}>{apt.status}</span></p>
                   {apt.status === "pending" && (
                     <p className="mt-2 text-sm text-gray-500">
-                      Waiting for service provider approval...
+                      Waiting for service provider approval....
                     </p>
                   )}
                   {apt.status === "accepted" && (
@@ -633,12 +633,12 @@ export default function RehomerDashboard() {
                       onClick={() => handleMakePayment(apt)}
                       className="mt-4 block w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
                     >
-                      Make Payment
+                      Make payment
                     </button>
                   )}
                   {apt.status === "declined" && (
                     <p className="mt-2 text-sm text-red-600">
-                      Appointment declined.
+                      Appointment Declined.
                     </p>
                   )}
                 </div>
