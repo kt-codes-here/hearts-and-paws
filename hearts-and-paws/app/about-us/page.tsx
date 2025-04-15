@@ -51,8 +51,8 @@ export default function AboutUs() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-900">Our Story</h2>
           <div className="mt-8 bg-white p-8 rounded-lg shadow-md">
-            <p className="text-gray-700 mb-4">Hearts & Paws was founded in 2018 with a simple but powerful vision: to create a community where no pet is left behind. What started as a small local initiative has grown into a comprehensive platform that serves pet lovers nationwide.</p>
-            <p className="text-gray-700 mb-4">Our founder, Emily Carter, witnessed firsthand the challenges faced by pet owners who, due to various life circumstances, could no longer care for their beloved companions. She also saw how traditional shelters were often overwhelmed and unable to provide the personalized attention each animal deserved.</p>
+            <p className="text-gray-700 mb-4">Hearts & Paws was founded in 2025 with a simple but powerful vision: to create a community where no pet is left behind. What started as a small local initiative has grown into a comprehensive platform that serves pet lovers nationwide.</p>
+            <p className="text-gray-700 mb-4">Our founders witnessed firsthand the challenges faced by pet owners who, due to various life circumstances, could no longer care for their beloved companions. They also saw how traditional shelters were often overwhelmed and unable to provide the personalized attention each animal deserved.</p>
             <p className="text-gray-700">Today, Hearts & Paws stands as a testament to the power of compassion and innovation. We've helped thousands of pets find new homes and have supported countless pet owners with our range of services. Our community continues to grow, united by a shared love for animals and a commitment to their welfare.</p>
           </div>
         </div>
