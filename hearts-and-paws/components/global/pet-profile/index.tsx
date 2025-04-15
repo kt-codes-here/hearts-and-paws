@@ -47,11 +47,11 @@ interface Pet {
 export default function PetProfile({ pet }: { pet: Pet }) {
   const { user: currentUser, isLoaded: userLoaded } = useUser();
   const defaultImage = "../../../public/1-section.png";
-  const [currentImage, setCurrentImage] = useState(pet.mainImage || defaultImage);
+  const [currentImage, setCurrentImage] = useState(pet.images && pet.images.length > 0 ? pet.images[0] : null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPet, setEditedPet] = useState({ ...pet });
-  const [images, setImages] = useState(pet.images || []);
+  const [images, setImages] = useState((pet.images || []).filter((img) => img && img.trim() !== ""));
   const [vaccinations, setVaccinations] = useState({
     week8: pet.vaccination?.week8 || "",
     week14: pet.vaccination?.week14 || "",
@@ -224,7 +224,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
     const file = e.target.files[0];
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("files", file, file.name);
 
     try {
       // Upload image to GCP using your existing endpoint
@@ -235,11 +235,31 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
       if (!response.ok) throw new Error("Image upload failed");
 
-      const { imageUrl } = await response.json();
-      setImages([...images, imageUrl]);
-    } catch (error) {
+      const data = await response.json();
+      console.log("Server response:", data); // Log the full server response for debugging
+
+      // Server returns { urls: string[] }, extract the first URL
+      if (data.urls && Array.isArray(data.urls) && data.urls.length > 0) {
+        const imageUrl = data.urls[0];
+        if (imageUrl && imageUrl.trim() !== "") {
+          setImages([...images, imageUrl]);
+        } else {
+          throw new Error("Received empty image URL from server");
+        }
+      } else if (data.imageUrl) {
+        // For backward compatibility with old API format
+        const imageUrl = data.imageUrl;
+        if (imageUrl && imageUrl.trim() !== "") {
+          setImages([...images, imageUrl]);
+        } else {
+          throw new Error("Received empty image URL from server");
+        }
+      } else {
+        throw new Error("No image URL found in server response");
+      }
+    } catch (error: any) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload image. Please try again.");
+      alert(`Failed to upload image: ${error.message || "Unknown error"}`);
     }
   };
 
@@ -300,8 +320,8 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         // Story field
         additionalInfo: editedPet.story,
 
-        // Updated images array
-        images: images,
+        // Filter out any empty strings from images array
+        images: images.filter((img) => img && img.trim() !== ""),
 
         // Rehome info as a separate structure
         rehomeInfo: editedPet.rehomeInfo,
@@ -405,35 +425,31 @@ export default function PetProfile({ pet }: { pet: Pet }) {
 
   const handleDelete = async () => {
     if (!pet.id) return;
-  
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this pet profile? This action is irreversible!"
-    );
-  
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this pet profile? This action is irreversible!");
+
     if (!confirmDelete) return;
-  
+
     try {
       setIsDeleting(true);
       const response = await fetch(`/api/pets/${pet.id}`, {
         method: "DELETE",
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to delete pet.");
       }
-  
+
       alert("Pet profile deleted successfully.");
       window.location.href = "/rehomer-dashboard"; // Redirect user after deletion
     } catch (err) {
       console.error("Error:", err);
       alert(err.message);
-    }
-    finally {
+    } finally {
       setIsDeleting(false);
     }
   };
-  
 
   return (
     <div className="container mx-auto p-6 max-w-[1100px]">
@@ -472,21 +488,21 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         <div className="ml-auto flex gap-2">
           {isOwner && (
             <>
-            <button
-              onClick={toggleEditMode}
-              className={`${isEditing ? "bg-gray-500 hover:bg-gray-600" : "bg-blue-600 hover:bg-blue-700"} 
+              <button
+                onClick={toggleEditMode}
+                className={`${isEditing ? "bg-gray-500 hover:bg-gray-600" : "bg-blue-600 hover:bg-blue-700"} 
                 text-white font-medium px-6 py-2 rounded-md transition duration-200`}
-            >
-              {isEditing ? "Cancel Edit" : "Edit Profile"}
-            </button>
-            <button
-            onClick={handleDelete}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting..." : "Delete Pet Profile"}
-          </button>
-          </>
+              >
+                {isEditing ? "Cancel Edit" : "Edit Profile"}
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Pet Profile"}
+              </button>
+            </>
           )}
 
           {isOwner && isEditing && (
@@ -535,7 +551,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         <div className="relative flex-grow flex flex-col items-center">
           <div className="w-full mb-3 relative">
             <Image
-              src={currentImage || defaultImage}
+              src={currentImage && currentImage.trim() !== "" ? currentImage : defaultImage}
               alt={isEditing ? editedPet.name : pet.name}
               width={600}
               height={400}
@@ -562,7 +578,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
                 >
                   <div onClick={() => handleImageClick(img)}>
                     <Image
-                      src={img}
+                      src={img && img.trim() !== "" ? img : "/placeholder.jpg"}
                       alt={`${isEditing ? editedPet.name : pet.name} Image ${index + 1}`}
                       width={120}
                       height={90}
