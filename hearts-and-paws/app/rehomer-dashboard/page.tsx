@@ -33,7 +33,6 @@ export default function RehomerDashboard() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [appointmentDateTime, setAppointmentDateTime] = useState("");
   const [appointments, setAppointments] = useState<any[]>([]);
-console.log(appointments)
   // Fetch authenticated user record
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
