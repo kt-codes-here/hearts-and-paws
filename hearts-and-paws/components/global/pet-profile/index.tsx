@@ -61,6 +61,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
   const [isAdoptionRequesting, setIsAdoptionRequesting] = useState(false);
   const [adoptionMessage, setAdoptionMessage] = useState("");
   const [adoptionStatus, setAdoptionStatus] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwner = useMemo(() => {
     if (!userLoaded || !currentUser || !pet.owner) {
@@ -402,6 +403,38 @@ export default function PetProfile({ pet }: { pet: Pet }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!pet.id) return;
+  
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this pet profile? This action is irreversible!"
+    );
+  
+    if (!confirmDelete) return;
+  
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/pets/${pet.id}`, {
+        method: "DELETE",
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete pet.");
+      }
+  
+      alert("Pet profile deleted successfully.");
+      window.location.href = "/rehomer-dashboard"; // Redirect user after deletion
+    } catch (err) {
+      console.error("Error:", err);
+      alert(err.message);
+    }
+    finally {
+      setIsDeleting(false);
+    }
+  };
+  
+
   return (
     <div className="container mx-auto p-6 max-w-[1100px]">
       {/* Header */}
@@ -438,6 +471,7 @@ export default function PetProfile({ pet }: { pet: Pet }) {
         </div>
         <div className="ml-auto flex gap-2">
           {isOwner && (
+            <>
             <button
               onClick={toggleEditMode}
               className={`${isEditing ? "bg-gray-500 hover:bg-gray-600" : "bg-blue-600 hover:bg-blue-700"} 
@@ -445,6 +479,14 @@ export default function PetProfile({ pet }: { pet: Pet }) {
             >
               {isEditing ? "Cancel Edit" : "Edit Profile"}
             </button>
+            <button
+            onClick={handleDelete}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete Pet Profile"}
+          </button>
+          </>
           )}
 
           {isOwner && isEditing && (

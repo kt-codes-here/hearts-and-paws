@@ -61,13 +61,13 @@ const Header = () => {
             <>
               <Link
                 href="/pet-listing"
-                className="text-[#2E256F] hover:text-purple-500 font-semibold"
+                className="text-[#2E256F] hover:text-[#675bc8]  font-semibold"
               >
                 Adopt
               </Link>
               <Link
                 href="/requests"
-                className="text-[#2E256F] hover:text-purple-500 font-semibold"
+                className="text-[#2E256F] hover:text-[#675bc8] font-semibold"
               >
                 My Requests
               </Link>
@@ -77,13 +77,13 @@ const Header = () => {
             <>
               <Link
                 href="/rehomer-dashboard"
-                className="text-[#2E256F] hover:text-purple-500 font-semibold"
+                className="text-[#2E256F] hover:text-[#675bc8] font-semibold"
               >
                 Rehome
               </Link>
               <Link
                 href="/adoption-requests"
-                className="text-[#2E256F] hover:text-purple-500 font-semibold"
+                className="text-[#2E256F] hover:text-[#675bc8]  font-semibold"
               >
                 Adoption Requests
               </Link>
@@ -93,15 +93,21 @@ const Header = () => {
           {/* Common links for both user types */}
           <Link
             href="/services"
-            className="text-[#2E256F] hover:text-purple-500 font-semibold"
+            className="text-[#2E256F] hover:text-[#675bc8] font-semibold"
           >
             Services
           </Link>
           <Link
-            href="/about"
-            className="text-[#2E256F] hover:text-purple-500 font-semibold"
+            href="/about-us"
+            className="text-[#2E256F] hover:text-[#675bc8] font-semibold"
           >
             About Us
+          </Link>
+          <Link
+            href="/knowledge-center"
+            className="text-[#2E256F] hover:text-[#675bc8] font-semibold"
+          >
+            FAQs
           </Link>
         </nav>
 
@@ -118,7 +124,10 @@ const Header = () => {
               </SignInButton>
             </SignedOut>
           ) : (
-            <div className="relative"  ref={menuRef}>
+            <div
+              className="relative"
+              ref={menuRef}
+            >
               <Image
                 src={user.imageUrl}
                 alt="Profile"

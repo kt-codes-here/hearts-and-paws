@@ -228,3 +228,71 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     await prisma.$disconnect();
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+const { userId } = getAuth(request);
+  console.log("Authenticated user ID:", userId);
+
+  if (!userId) {
+    console.log("No authenticated user found");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const petId = params?.id;
+  if (!petId) {
+    console.log("No pet ID in params");
+    return NextResponse.json({ error: "Pet ID is required" }, { status: 400 });
+  }
+
+  // if (!userId) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
+
+  try {
+    // Fetch pet details
+    const pet = await prisma.pet.findUnique({
+      where: { id: petId},
+      select: { ownerId: true, isAdopted: true, adoptionRequests: { select: { id: true } } },
+    });
+
+    if (!pet) {
+      return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    console.log("Checking ownership - Pet Owner ID:", pet.ownerId, "User ID:", user.id);
+    
+    // Ensure the user is the owner of the pet
+    if (pet.ownerId !== user.id) {
+      return NextResponse.json({ error: "Unauthorized to delete this pet" }, { status: 403 });
+    }
+
+    // Prevent deletion if the pet is adopted
+    if (pet.isAdopted) {
+      return NextResponse.json({ error: "Cannot delete an adopted pet." }, { status: 403 });
+    }
+
+    // Prevent deletion if there are pending adoption requests
+    if (pet.adoptionRequests.length > 0) {
+      return NextResponse.json({ error: "Cannot delete a pet with pending adoption requests." }, { status: 403 });
+    }
+
+    // Delete the pet
+    await prisma.pet.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ message: "Pet deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting pet:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
