@@ -11,8 +11,9 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
 import Countdown from "../../components/ui/countDown"; // adjust the path if stored in a separate file
 
-// Initialize Stripe outside the component.
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
+
 
 export default function RehomerDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
