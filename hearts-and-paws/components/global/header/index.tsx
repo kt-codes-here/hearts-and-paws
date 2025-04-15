@@ -144,6 +144,8 @@ const Header = () => {
                   >
                     View Profile
                   </Link>
+                  <Link href="/support" className="block px-4 py-2 hover:bg-gray-100">
+                  Support </Link>
                   <SignOutButton>
                     <button className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
                   </SignOutButton>

@@ -23,3 +23,17 @@ export async function POST(req: Request) {
 
   return NextResponse.json(ticket);
 }
+
+
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+  const tickets = await prisma.supportTicket.findMany({
+    where: { userId: user!.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(tickets);
+}
