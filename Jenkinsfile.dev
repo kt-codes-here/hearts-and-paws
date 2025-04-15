@@ -33,45 +33,44 @@ pipeline {
       }
     }
 
-stage('Extract JIRA Issue from Commit') {
-  steps {
-    script {
-      // Run git log with double percent signs for Windows and capture full output.
-      def commitMessageOutput = bat(
-        script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
-        returnStdout: true
-      ).trim();
+ stage('Extract JIRA Issue from Commit') {
+      steps {
+        script {
+          // Use double percent for Windows so that git gets a literal "%B".
+          def commitMessageOutput = bat(
+            script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
+            returnStdout: true
+          ).trim();
+          
+          echo "Raw commit message output: ${commitMessageOutput}"
 
-      echo "Raw output from git log:\n${commitMessageOutput}";
+          // Split into lines and take the last non-empty line as the commit message.
+          def commitMessageLines = commitMessageOutput.split(/[\r\n]+/);
+          def commitMessage = "";
+          for (int i = commitMessageLines.size() - 1; i >= 0; i--) {
+            if (commitMessageLines[i].trim()) {
+              commitMessage = commitMessageLines[i].trim();
+              break;
+            }
+          }
+          
+          echo "Latest commit message: ${commitMessage}"
 
-      // Split the output into lines and take the last non-empty line as the actual commit message.
-      def commitMessageLines = commitMessageOutput.split(/[\r\n]+/);
-      def commitMessage = "";
-      for (int i = commitMessageLines.size() - 1; i >= 0; i--) {
-        if (commitMessageLines[i].trim()) {
-          commitMessage = commitMessageLines[i].trim();
-          break;
+          // Use a regular expression to extract the JIRA ticket key (e.g., "SCRUM-35").
+          def matcher = commitMessage =~ /(SCRUM-\d+)/;
+          def jiraKey = matcher ? matcher[0][0] : "";
+          
+          if (jiraKey) {
+            echo "Detected JIRA Issue Key: ${jiraKey}";
+            // Store the JIRA key in an environment variable for later use.
+            env.JIRA_ISSUE_KEY = jiraKey;
+          } else {
+            echo "No JIRA Issue Key detected in commit message.";
+            env.JIRA_ISSUE_KEY = "";
+          }
         }
       }
-
-      echo "Latest commit message: ${commitMessage}";
-
-      // Use a regular expression to extract the JIRA ticket (e.g., 'SCRUM-35').
-      def matcher = commitMessage =~ /(SCRUM-\d+)/;
-      def jiraKey = matcher ? matcher[0][0] : "";
-      
-      if (jiraKey) {
-        echo "Detected JIRA Issue Key: ${jiraKey}";
-        // Save JIRA key to an environment variable for use later.
-        env.JIRA_ISSUE_KEY = jiraKey;
-      } else {
-        echo "No JIRA Issue Key detected in commit message.";
-        env.JIRA_ISSUE_KEY = "";
-      }
     }
-  }
-}
-
 
     stage('Query JIRA and Notify Slack') {
       when {
@@ -79,20 +78,21 @@ stage('Extract JIRA Issue from Commit') {
       }
       steps {
         script {
-          // Build the curl command to query the JIRA issue.
+          // Build the curl command without interpolating sensitive info directly in echo.
           def jiraCmd = """
             cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
           """
-          echo "Querying JIRA: ${jiraCmd}";
+          // For security, avoid echoing the full command with credentials.
+          echo "Querying JIRA with issue key ${env.JIRA_ISSUE_KEY}";
+          
           def jiraResponse = bat(script: jiraCmd, returnStdout: true).trim();
-          echo "JIRA response: ${jiraResponse}";
+          echo "JIRA response received.";
 
-          // Parse the JSON response (requires the Pipeline Utility Steps plugin)
+          // Parse the JSON response (requires the Pipeline Utility Steps plugin).
           def issue = readJSON text: jiraResponse;
           def summary = issue.fields.summary ?: "No summary provided";
           def status = issue.fields.status?.name ?: "Unknown";
           
-          // Compose the Slack message
           def slackMessage = """
             *Code Push Notification*
             *Branch:* branch-dev
@@ -101,9 +101,12 @@ stage('Extract JIRA Issue from Commit') {
             *Status:* ${status}
           """.stripIndent();
           
-          echo "Sending Slack message: ${slackMessage}";
-          slackSend channel: "${env.SLACK_CHANNEL}", message: slackMessage,
-                     color: "good", botUser: true, tokenCredentialId: 'slack-webhook';
+          echo "Sending Slack notification with JIRA details.";
+          slackSend channel: "${env.SLACK_CHANNEL}",
+                    message: slackMessage,
+                    color: "good",
+                    botUser: true,
+                    tokenCredentialId: 'slack-webhook';
         }
       }
     }
