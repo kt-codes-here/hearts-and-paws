@@ -13,7 +13,7 @@ pipeline {
     // JIRA configuration
     JIRA_BASE_URL = credentials('JIRA_BASE_URL')
     JIRA_USERNAME = credentials('jira-username')
-    JIRA_API_TOKEN = credentials('jira-api-token')
+    JIRA_API_TOKEN = credentials('jira-admin-token')
     
     // Slack configuration
     SLACK_CHANNEL = credentials('SLACK_CHANNEL')
