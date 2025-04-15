@@ -7,7 +7,7 @@ Before implementing a new feature, follow these steps:
 1. **Create a New Branch**
 
    - Always create a new branch from `dev` before starting any new feature.
-   - Use the following command:
+   - Use the following commands:
      ```sh
      git checkout dev
      git pull origin dev
