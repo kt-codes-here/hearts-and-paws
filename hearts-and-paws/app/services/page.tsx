@@ -70,7 +70,7 @@ export default function Services() {
         <div className="md:w-1/2 text-center md:text-left">
           <h2 className="text-4xl font-bold text-gray-900">Our Pet</h2>
           <h3 className="text-3xl font-semibold text-green-600 mt-2">Services</h3>
-          <p className="text-gray-700 mt-4">At Hearts & Paws, we offer a complete range of professional pet services delivered with love and expertise. From grooming to training, we're committed to keeping your furry friends happy, healthy, and well-cared for.</p>
+          <p className="text-gray-700 mt-4">At Hearts & Paws, we offer a complete range of professional pet services delivered with love and expertise. From grooming to training, we&apos;re committed to keeping your furry friends happy, healthy, and well-cared for.</p>
           <div className="mt-6">
             <Link
               href="#services-list"
@@ -120,7 +120,7 @@ export default function Services() {
                     <h3 className="text-2xl font-semibold ml-4 text-gray-900">{service.title}</h3>
                   </div>
                   <p className="text-gray-700 mb-6">{service.description}</p>
-                  <h4 className="font-medium text-green-700 mb-3">What's Included:</h4>
+                  <h4 className="font-medium text-green-700 mb-3">What&apos;s Included:</h4>
                   <ul className="space-y-2">
                     {service.details.map((detail, idx) => (
                       <li
@@ -206,7 +206,7 @@ export default function Services() {
                   <p className="text-green-600">{testimonial.pet}</p>
                 </div>
               </div>
-              <p className="text-gray-700 italic">"{testimonial.text}"</p>
+              <p className="text-gray-700 italic">&quot;{testimonial.text}&quot;</p>
               <div className="mt-4 flex text-yellow-400">
                 <span>★</span>
                 <span>★</span>
@@ -240,7 +240,7 @@ export default function Services() {
           <div className="mt-8 space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-xl font-semibold text-gray-900">How long does a typical grooming session take?</h3>
-              <p className="text-gray-700 mt-2">Grooming sessions typically take 1-2 hours depending on your pet's size, coat condition, and the specific services requested.</p>
+              <p className="text-gray-700 mt-2">Grooming sessions typically take 1-2 hours depending on your pet&apos;s size, coat condition, and the specific services requested.</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-xl font-semibold text-gray-900">Do you offer services for all breeds and sizes?</h3>
@@ -252,7 +252,7 @@ export default function Services() {
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="text-xl font-semibold text-gray-900">Can I stay with my pet during services?</h3>
-              <p className="text-gray-700 mt-2">While we understand your concern, we find that most pets relax better when their owners aren't present. However, you're welcome to discuss specific arrangements with our staff.</p>
+              <p className="text-gray-700 mt-2">While we understand your concern, we find that most pets relax better when their owners aren&apos;t present. However, you&apos;re welcome to discuss specific arrangements with our staff.</p>
             </div>
           </div>
         </div>

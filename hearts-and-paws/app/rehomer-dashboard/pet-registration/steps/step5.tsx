@@ -4,6 +4,7 @@
 import React from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { PetFormInputs } from "../page";
+import Image from "next/image";
 
 export default function Step5() {
   const { setValue, register } = useFormContext<PetFormInputs>();
@@ -38,7 +39,7 @@ export default function Step5() {
     <section>
       <h2 className="text-xl font-semibold mb-4">Documents / Images</h2>
       <p className="text-sm text-gray-600 mb-4">
-        These documents won't be visible to the public and will only be shared with the adopter once the Rehome process is complete.
+        These documents won&apos;t be visible to the public and will only be shared with the adopter once the Rehome process is complete.
       </p>
 
       {/* File input */}
@@ -64,7 +65,7 @@ export default function Step5() {
             >
               {file ? (
                 <>
-                  <img
+                  <Image
                     src={URL.createObjectURL(file)}
                     alt="Image preview"
                     className="object-cover w-full h-full"

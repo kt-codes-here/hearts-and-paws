@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
-import Image from "next/image";
 import { roleNames } from "@/constant/utils";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
-import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
 import Countdown from "../../components/ui/countDown"; // adjust the path if stored in a separate file
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -25,8 +23,6 @@ export default function RehomerDashboard() {
     firstName: string;
     id: string;
   } | null>(null);
-  const [rehomes, setRehomes] = useState<any[]>([]);
-  const [loadingRehomes, setLoadingRehomes] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // States for appointment booking and payment
   const [services, setServices] = useState<any[]>([]);
@@ -60,22 +56,6 @@ export default function RehomerDashboard() {
         });
     }
   }, [isLoaded, isSignedIn, user, router]);
-
-  // Fetch rehome listings for this user
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetch("/api/auth/rehome")
-        .then((res) => res.json())
-        .then((data) => {
-          setRehomes(data.rehomes || []);
-          setLoadingRehomes(false);
-        })
-        .catch((err) => {
-          console.error("Error fetching rehomes:", err);
-          setLoadingRehomes(false);
-        });
-    }
-  }, [isLoaded, isSignedIn]);
 
   // Fetch available services (from all service providers)
   useEffect(() => {

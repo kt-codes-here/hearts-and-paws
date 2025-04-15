@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Query all rehome listings and include the associated pet data
     const rehomes = await prisma.rehome.findMany({

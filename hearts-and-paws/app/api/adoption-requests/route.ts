@@ -4,10 +4,22 @@ import { getAuth } from "@clerk/nextjs/server";
 
 const prisma = new PrismaClient();
 
+// Define an interface for the payload we expect to return
+interface AdoptionRequestPayload {
+  id: string;
+  status: string;
+  createdAt: Date;
+  pet: {
+    id: string;
+    owner?: { id: string };
+  };
+  requester?: { id: string };
+}
+
 // Create a new adoption request
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = await getAuth(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -103,7 +115,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const type = url.searchParams.get("type") || "all"; // 'sent', 'received', or 'all'
 
-    let requests = [];
+    let requests: AdoptionRequestPayload[] = [];
 
     if (type === "sent" || type === "all") {
       // Requests sent by the user
@@ -120,9 +132,9 @@ export async function GET(req: NextRequest) {
       });
 
       if (type === "sent") {
-        requests = sentRequests;
+        requests = sentRequests as AdoptionRequestPayload[];
       } else {
-        requests = [...sentRequests];
+        requests = [...sentRequests] as AdoptionRequestPayload[];
       }
     }
 
@@ -142,9 +154,9 @@ export async function GET(req: NextRequest) {
       });
 
       if (type === "received") {
-        requests = receivedRequests;
+        requests = receivedRequests as AdoptionRequestPayload[];
       } else {
-        requests = [...requests, ...receivedRequests];
+        requests = [...requests, ...receivedRequests] as AdoptionRequestPayload[];
       }
     }
 

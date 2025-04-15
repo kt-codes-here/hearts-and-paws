@@ -1,5 +1,3 @@
-// app/api/payment/confirm/route.ts
-
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { PrismaClient } from "@prisma/client";
@@ -19,14 +17,27 @@ export async function POST(request: Request) {
       expand: ["line_items"],
     });
     
-    // Extract metadata. Note: appointmentId must have been passed at checkout creation.
+    // Ensure payment_intent is available; if it's null, return an error.
+    if (!session.payment_intent) {
+      return NextResponse.json({ error: "Payment intent is missing" }, { status: 400 });
+    }
+    
+    // Safely extract transactionId from the payment_intent.
+    const transactionId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent.id;
+    
+    // Extract metadata from the session.
     const { serviceId, customerId, providerId, appointmentDate, appointmentId } = session.metadata || {};
     const amountCents = session.amount_total;
     const currency = session.currency;
-    const transactionId = session.payment_intent; // external transaction id from Stripe
     
     if (!serviceId || !customerId || !providerId || !appointmentId) {
-      return NextResponse.json({ error: "Missing required metadata (serviceId, customerId, providerId, appointmentId)" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required metadata (serviceId, customerId, providerId, appointmentId)" },
+        { status: 400 }
+      );
     }
     
     // Create the Payment record in the database.

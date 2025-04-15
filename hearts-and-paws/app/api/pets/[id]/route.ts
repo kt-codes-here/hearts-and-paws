@@ -216,11 +216,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         message: "Pet updated successfully",
         petId: updatedPet.id,
       });
-    } catch (dbError) {
+    } catch (dbError:any) {
       console.error("Database error during update:", dbError);
       return NextResponse.json({ error: `Database error: ${dbError.message}` }, { status: 500 });
     }
-  } catch (error) {
+  } catch (error:any) {
     console.error("Error in PUT handler:", error);
     return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
   } finally {

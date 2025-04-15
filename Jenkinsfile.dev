@@ -1,147 +1,211 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        NODE_VERSION = '22.14.0'
-        DATABASE_URL = credentials('DATABASE_URL')
-        NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
-        CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
-        DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
-        APP_NAME = 'Slack-notification-service'
+  environment {
+    NODE_VERSION = '22.14.0'
+    DATABASE_URL = credentials('DATABASE_URL')
+    NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
+    CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
+    DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
+    APP_NAME = 'Slack-notification-service'
+    
+    // JIRA configuration
+    JIRA_BASE_URL = credentials('JIRA_BASE_URL')
+    JIRA_USERNAME = credentials('jira-username')
+    JIRA_API_TOKEN = credentials('jira-api-token')
+    
+    // Slack configuration
+    SLACK_CHANNEL = credentials('SLACK_CHANNEL')
+  }
+
+  stages {
+    stage('Checkout Code') {
+      steps {
+        script {
+          echo "📥 Pulling latest changes from branch-dev"
+          bat """
+            cd ${DEPLOY_DIR}
+            git reset --hard HEAD
+            git pull origin branch-dev || exit /b 1
+          """
+        }
+      }
     }
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                script {
-                    echo "📥 Pulling latest changes from branch-dev"
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    git reset --hard HEAD
-                    git pull origin branch-dev || exit /b 1
-                    """
-                }
-            }
-        }
-
-        stage('Set Up Environment') {
-            steps {
-                script {
-                    echo "⚙️ Creating .env file..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    echo DATABASE_URL=${DATABASE_URL} > .env
-                    echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} >> .env
-                    echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} >> .env
-                    echo NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} >> .env
-                    echo "✅ .env file created successfully!"
-                    type .env
-                    """
-                }
-            }
-        }
-
-      stage('Install Node.js') {
-    steps {
+    stage('Extract JIRA Issue from Commit') {
+      steps {
         script {
-            echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
-            bat """
+          // Get the most recent commit message.
+          def commitMessage = bat(
+            script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%B",
+            returnStdout: true
+          ).trim();
+          echo "Latest commit message: ${commitMessage}"
+
+          // Use a regular expression to extract the JIRA ticket (e.g., 'PROJ-123').
+          def matcher = commitMessage =~ /(PROJ-\\d+)/;
+          def jiraKey = matcher ? matcher[0][0] : "";
+          
+          if (jiraKey) {
+            echo "Detected JIRA Issue Key: ${jiraKey}";
+            // Save JIRA key to an environment variable (so it can be used later in the pipeline)
+            env.JIRA_ISSUE_KEY = jiraKey;
+          } else {
+            echo "No JIRA Issue Key detected in commit message.";
+            env.JIRA_ISSUE_KEY = "";
+          }
+        }
+      }
+    }
+
+    stage('Query JIRA and Notify Slack') {
+      when {
+        expression { return env.JIRA_ISSUE_KEY && env.JIRA_ISSUE_KEY != "" }
+      }
+      steps {
+        script {
+          // Build the curl command to query the JIRA issue
+          def jiraCmd = """
+            cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
+          """
+          echo "Querying JIRA: ${jiraCmd}";
+          def jiraResponse = bat(script: jiraCmd, returnStdout: true).trim();
+          echo "JIRA response: ${jiraResponse}";
+
+          // Parse the JSON response (ensure that Pipeline Utility Steps plugin is installed).
+          def issue = readJSON text: jiraResponse;
+          def summary = issue.fields.summary ?: "No summary provided";
+          def status = issue.fields.status?.name ?: "Unknown";
+          
+          // Compose Slack message with JIRA details and commit info.
+          def slackMessage = """
+            *Code Push Notification*
+            *Branch:* branch-dev
+            *JIRA Task:* ${env.JIRA_ISSUE_KEY}
+            *Summary:* ${summary}
+            *Status:* ${status}
+          """.stripIndent();
+          
+          echo "Sending Slack message: ${slackMessage}";
+          slackSend channel: "${env.SLACK_CHANNEL}", message: slackMessage,
+                     color: "good", botUser: true, tokenCredentialId: 'slack-webhook';
+        }
+      }
+    }
+
+    stage('Set Up Environment') {
+      steps {
+        script {
+          echo "⚙️ Creating .env file..."
+          bat """
+            cd ${DEPLOY_DIR}
+            echo DATABASE_URL=${DATABASE_URL} > .env
+            echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} >> .env
+            echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} >> .env
+            echo NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} >> .env
+            echo "✅ .env file created successfully!"
+            type .env
+          """
+        }
+      }
+    }
+
+    stage('Install Node.js') {
+      steps {
+        script {
+          echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
+          bat """
             set NVM_DIR=C:\\Users\\Administrator\\AppData\\Roaming\\nvm
             set NODEJS_HOME=%NVM_DIR%\\v${NODE_VERSION}
             set PATH=%NODEJS_HOME%;%PATH%
             node -v || exit /b 1
             npm -v || exit /b 1
-            """
+          """
         }
-    }
-}
-
-
-        stage('Install Dependencies') {
-            steps {
-                script {
-                    echo "📦 Installing dependencies..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    npm install --force || exit /b 1
-                    """
-                }
-            }
-        }
-
-        stage('Generate Prisma Client') {
-            steps {
-                script {
-                    echo "🛠️ Generating Prisma Client..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    npx prisma generate || exit /b 1
-                    """
-                }
-            }
-        }
-
-        stage('Run Prisma Migrations') {
-            steps {
-                script {
-                    echo "📜 Applying Prisma Migrations..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    npx prisma migrate deploy || exit /b 1
-                    """
-                }
-            }
-        }
-
-        stage('Build Next.js') {
-            steps {
-                script {
-                    echo "🏗️ Building Next.js app..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    npm run build || exit /b 1
-                    """
-                }
-            }
-        }
-
-        stage('Start Application') {
-            steps {
-                script {
-                    echo "🚀 Starting Next.js server..."
-                    bat """
-                    cd ${DEPLOY_DIR}
-                    taskkill /F /IM node.exe || echo "No running process found"
-                    start /B npm start > nextjs.log 2>&1
-                    """
-                }
-            }
-        }
+      }
     }
 
-    post {
-        always {
-            script {
-                withCredentials([
-                    string(credentialsId: 'SLACK_CHANNEL', variable: 'SLACK_CHANNEL'),
-                    string(credentialsId: 'slack-webhook', variable: 'SLACK_WEBHOOK')
-                ]) {
-                    def message = currentBuild.result == 'SUCCESS' ? 
-                        "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV" :
-                        "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV"
-
-                    def color = currentBuild.result == 'SUCCESS' ? "good" : "danger"
-
-                    slackSend(
-                        channel: "${SLACK_CHANNEL}",
-                        message: message,
-                        color: color,
-                        botUser: true,
-                        tokenCredentialId: 'slack-webhook'
-                    )
-                }
-            }
+    stage('Install Dependencies') {
+      steps {
+        script {
+          echo "📦 Installing dependencies..."
+          bat """
+            cd ${DEPLOY_DIR}
+            npm install --force || exit /b 1
+          """
         }
+      }
     }
+
+    stage('Generate Prisma Client') {
+      steps {
+        script {
+          echo "🛠️ Generating Prisma Client..."
+          bat """
+            cd ${DEPLOY_DIR}
+            npx prisma generate || exit /b 1
+          """
+        }
+      }
+    }
+
+    stage('Run Prisma Migrations') {
+      steps {
+        script {
+          echo "📜 Applying Prisma Migrations..."
+          bat """
+            cd ${DEPLOY_DIR}
+            npx prisma migrate deploy || exit /b 1
+          """
+        }
+      }
+    }
+
+    stage('Build Next.js') {
+      steps {
+        script {
+          echo "🏗️ Building Next.js app..."
+        //   bat """
+        //     cd ${DEPLOY_DIR}
+        //     npm run build || exit /b 1
+        //   """
+        }
+      }
+    }
+
+    stage('Start Application') {
+      steps {
+        script {
+          echo "🚀 Starting Next.js server..."
+          bat """
+            cd ${DEPLOY_DIR}
+            taskkill /F /IM node.exe || echo "No running process found"
+            start /B npm start > nextjs.log 2>&1
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        withCredentials([
+          string(credentialsId: 'SLACK_CHANNEL', variable: 'SLACK_CHANNEL'),
+          string(credentialsId: 'slack-webhook', variable: 'SLACK_WEBHOOK')
+        ]) {
+          def message = currentBuild.result == 'SUCCESS' ?
+            "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV" :
+            "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV";
+          def color = currentBuild.result == 'SUCCESS' ? "good" : "danger";
+          slackSend channel: "${SLACK_CHANNEL}",
+                    message: message,
+                    color: color,
+                    botUser: true,
+                    tokenCredentialId: 'slack-webhook';
+        }
+      }
+    }
+  }
 }

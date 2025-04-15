@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useUserContext } from "@/context/UserContext";
@@ -38,7 +37,6 @@ export default function ServiceBookingDashboard() {
   const [appointmentDateTime, setAppointmentDateTime] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const router = useRouter();
 
   // Load user data if not already available
   useEffect(() => {
@@ -348,7 +346,7 @@ export default function ServiceBookingDashboard() {
                     <ul className="list-disc pl-5 space-y-1">
                       <li>Neither Hearts and Paws nor the service provider shall be held liable for any injury, illness, death, damage, loss, or accident involving your pet that may occur during or as a result of the services provided.</li>
                       <li>You understand that working with animals involves inherent risks, and you voluntarily accept these risks.</li>
-                      <li>The service provider will exercise reasonable care while providing services to your pet, but cannot guarantee your pet's behavior, health, or reaction to the service.</li>
+                      <li>The service provider will exercise reasonable care while providing services to your pet, but cannot guarantee your pet&apos;s behavior, health, or reaction to the service.</li>
                     </ul>
                   </section>
 
@@ -374,7 +372,7 @@ export default function ServiceBookingDashboard() {
                     <ul className="list-disc pl-5 space-y-1">
                       <li>Your pet is in good health and has not shown aggressive behavior toward people or other animals.</li>
                       <li>You have disclosed all known medical conditions, behavioral issues, and special needs of your pet to the service provider.</li>
-                      <li>Your pet's vaccinations are up-to-date as required by local regulations.</li>
+                      <li>Your pet&apos;s vaccinations are up-to-date as required by local regulations.</li>
                     </ul>
                   </section>
 
@@ -396,7 +394,7 @@ export default function ServiceBookingDashboard() {
                       </svg>
                       4. INDEMNIFICATION
                     </h3>
-                    <p>You agree to indemnify, defend, and hold harmless Hearts and Paws and the service provider from any claims, damages, liabilities, costs, or expenses (including attorney fees) arising from your pet's actions, your breach of this agreement, or your negligence.</p>
+                    <p>You agree to indemnify, defend, and hold harmless Hearts and Paws and the service provider from any claims, damages, liabilities, costs, or expenses (including attorney fees) arising from your pet&apos;s actions, your breach of this agreement, or your negligence.</p>
                   </section>
 
                   <section className="rounded-lg bg-white p-4 border border-gray-200">
@@ -438,7 +436,7 @@ export default function ServiceBookingDashboard() {
                       </svg>
                       6. CANCELLATION POLICY
                     </h3>
-                    <p>Cancellations must be made at least 24 hours in advance of the scheduled appointment. Late cancellations or no-shows may result in charges up to the full service fee, at the service provider's discretion.</p>
+                    <p>Cancellations must be made at least 24 hours in advance of the scheduled appointment. Late cancellations or no-shows may result in charges up to the full service fee, at the service provider&apos;s discretion.</p>
                   </section>
 
                   <section className="rounded-lg bg-white p-4 border border-gray-200">

@@ -55,7 +55,7 @@ export default function MyRequestsPage() {
       ) : requests.length === 0 ? (
         <div className="text-center p-12 bg-white rounded-xl shadow-md">
           <div className="text-6xl mb-6">🐱</div>
-          <p className="text-xl text-gray-600 mb-4">You haven't made any adoption requests yet.</p>
+          <p className="text-xl text-gray-600 mb-4">You haven&apos;t made any adoption requests yet.</p>
           <Link
             href="/pets"
             className="inline-block px-6 py-3 bg-gradient-to-r from-[#675bc8] to-[#8b80e0] text-white rounded-lg hover:opacity-90 transition-opacity duration-200 font-medium"
@@ -172,7 +172,7 @@ export default function MyRequestsPage() {
                           </div>
                           <div>
                             <p className="font-medium text-red-800">Your request was not approved</p>
-                            <p className="text-sm text-red-700">Don't worry, there are many other pets looking for a loving home.</p>
+                            <p className="text-sm text-red-700">Don&apos;t worry, there are many other pets looking for a loving home.</p>
                           </div>
                         </div>
                         <div className="mt-3 ml-10">

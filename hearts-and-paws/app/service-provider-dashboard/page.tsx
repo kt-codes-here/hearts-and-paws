@@ -8,7 +8,6 @@ import * as Dialog from "@radix-ui/react-dialog";
 import AvailabilitySelector from "@/components/global/availability";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
-import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
 
 // Initialize Stripe outside the component.
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -28,7 +27,7 @@ interface Service {
 }
 
 export default function ServiceProviderDashboard() {
-  const { user, isSignedIn, isLoaded } = useUser();
+  const { user, isSignedIn } = useUser();
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -39,8 +38,6 @@ export default function ServiceProviderDashboard() {
     price: "",
     duration: ""
   });
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [appointmentDateTime, setAppointmentDateTime] = useState("");
 
   useEffect(() => {
     if (isSignedIn && user) {
@@ -105,47 +102,12 @@ export default function ServiceProviderDashboard() {
     }
   };
 
-  // Filter appointments
-  const requestedAppointments = appointments.filter(
-    (apt) => apt.status !== "confirmed"
-  );
   const upcomingAppointments = appointments.filter(
     (apt) =>
       apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
   );
 
-  // Payment handler for accepted appointments
-  const handleMakePayment = async (apt: any) => {
-    try {
-      const res = await fetch("/api/payment/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: apt.service.id,
-          customerId: userData?.id,
-          providerId: apt.provider.userId,
-          appointmentDate: apt.appointmentDate,
-          servicePrice: apt.service.price,
-          appointmentId: apt.id
-        }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        alert("Payment error: " + (errorData.error || "Unknown error"));
-        return;
-      }
-      const { sessionId } = await res.json();
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({ sessionId });
-      if (error) {
-        console.error("Stripe error:", error.message);
-        alert("Payment failed: " + error.message);
-      }
-    } catch (error) {
-      console.error("Error processing payment:", error);
-      alert("Error processing payment.");
-    }
-  };
+ 
 
   const updateAppointmentStatus = (appointmentId: string, status: string, feedback = "") => {
     fetch("/api/appoinment", {

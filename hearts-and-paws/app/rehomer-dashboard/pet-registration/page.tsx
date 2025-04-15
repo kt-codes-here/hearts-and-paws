@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm, FormProvider, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -10,6 +10,7 @@ import Step3 from "./steps/step3";  // Location
 import Step4 from "./steps/step4";  // Pet's Story (new)
 import Step5 from "./steps/step5";  // Documents/Images (new)
 import Step6 from "./steps/step6";  // Rehome Details (old step5)
+import Image from "next/image";
 
 export interface PetFormInputs {
   petName: string;
@@ -198,7 +199,7 @@ export default function PetRegistrationPage() {
           <h2 className="text-2xl font-bold text-center mb-4">Welcome!</h2>
           <div className="flex flex-col items-center mb-6">
             {user?.imageUrl && (
-              <img
+              <Image
                 src={user.imageUrl}
                 alt="User Avatar"
                 className="w-16 h-16 rounded-full mb-2 object-cover"
