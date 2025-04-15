@@ -72,55 +72,52 @@ pipeline {
       }
     }
 
-    stage('Query JIRA and Notify Slack') {
-    when {
-        expression { return env.JIRA_ISSUE_KEY && env.JIRA_ISSUE_KEY != "" }
+stage('Query JIRA and Notify Slack') {
+  when {
+    expression { return env.JIRA_ISSUE_KEY && env.JIRA_ISSUE_KEY != "" }
+  }
+  steps {
+    script {
+      // Build the curl command (avoid echoing sensitive data)
+      def jiraCmd = """
+        cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
+      """
+      echo "Querying JIRA with issue key ${env.JIRA_ISSUE_KEY}";
+      
+      // Execute the command and capture the full raw output.
+      def fullResponse = bat(script: jiraCmd, returnStdout: true).trim();
+      echo "Raw JIRA response:\n${fullResponse}";
+
+      // Split the output into lines and extract the first line that looks like JSON.
+      def responseLines = fullResponse.split(/[\r\n]+/);
+      def jsonResponse = responseLines.find { it.trim().startsWith("{") }?.trim() ?: "";
+
+      if (!jsonResponse) {
+        error "No valid JSON found in JIRA response. Check credentials/URL.";
+      }
+
+      // Parse the JSON response.
+      def issue = readJSON text: jsonResponse;
+      def summary = issue.fields.summary ?: "No summary provided";
+      def status = issue.fields.status?.name ?: "Unknown";
+      
+      def slackMessage = """
+        *Code Push Notification*
+        *Branch:* branch-dev
+        *JIRA Task:* ${env.JIRA_ISSUE_KEY}
+        *Summary:* ${summary}
+        *Status:* ${status}
+      """.stripIndent();
+      
+      echo "Sending Slack notification (JIRA details will not expose sensitive info)";
+      slackSend channel: "${env.SLACK_CHANNEL}",
+                message: slackMessage,
+                color: "good",
+                botUser: true,
+                tokenCredentialId: 'slack-webhook';
     }
-    steps {
-        script {
-        // Build the curl command (note: avoid echoing full credentials for security)
-        def jiraCmd = """
-            cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
-        """
-        echo "Querying JIRA with issue key ${env.JIRA_ISSUE_KEY}";
-        
-        // Execute the command and capture the raw response.
-        def jiraResponse = bat(script: jiraCmd, returnStdout: true).trim();
-        echo "Raw JIRA response:\n${jiraResponse}";
-
-        // Check if the response is valid JSON (for example, by verifying it starts with a '{')
-        if (!jiraResponse.startsWith("{")) {
-            error "JIRA response is not valid JSON. Please verify the JIRA credentials and URL."
-        }
-
-        // Try parsing the response.
-        def issue;
-        try {
-            issue = readJSON text: jiraResponse;
-        } catch (ex) {
-            error "Error parsing JIRA response: ${ex}";
-        }
-
-        def summary = issue.fields.summary ?: "No summary provided";
-        def status = issue.fields.status?.name ?: "Unknown";
-
-        def slackMessage = """
-            *Code Push Notification*
-            *Branch:* branch-dev
-            *JIRA Task:* ${env.JIRA_ISSUE_KEY}
-            *Summary:* ${summary}
-            *Status:* ${status}
-        """.stripIndent();
-        
-        echo "Sending Slack notification (without exposing sensitive info)";
-        slackSend channel: "${env.SLACK_CHANNEL}",
-                    message: slackMessage,
-                    color: "good",
-                    botUser: true,
-                    tokenCredentialId: 'slack-webhook';
-        }
-    }
-    }
+  }
+}
 
 
     stage('Set Up Environment') {
