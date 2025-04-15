@@ -9,8 +9,8 @@ import { roleNames } from "@/constant/utils";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 
-// Initialize Stripe outside the component.
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+// Initialize Stripe outside the component only if the key exists
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 export default function RehomerDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -211,7 +211,40 @@ export default function RehomerDashboard() {
         {/* Pets Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6">Your Rehome Listings</h2>
-          {/* (Existing rehome listings code goes here) */}
+          {loadingRehomes ? (
+            <p className="text-gray-600">Loading your pet listings...</p>
+          ) : rehomes.length === 0 ? (
+            <p className="text-gray-600">You haven't created any rehome listings yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {rehomes.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer transform transition hover:scale-105"
+                  onClick={(e) => handlePetClick(e, item.pet.id)}
+                >
+                  <div className="h-48 w-full relative">
+                    <Image
+                      src={item.pet.images && item.pet.images.length > 0 ? item.pet.images[0] : "/placeholder.jpg"}
+                      alt={item.pet.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-bold text-purple-700">{item.pet.name}</h3>
+                    <p className="text-gray-600 text-sm mb-2">{`${item.pet.city}, ${item.pet.postcode}`}</p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">{item.pet.gender}</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{item.pet.breed}</span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">{item.pet.age} years</span>
+                    </div>
+                    <p className="text-gray-700 line-clamp-2">{item.pet.additionalInfo}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Section: Available Services for Appointment Booking */}
