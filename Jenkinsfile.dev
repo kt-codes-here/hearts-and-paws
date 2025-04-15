@@ -36,20 +36,20 @@ pipeline {
     stage('Extract JIRA Issue from Commit') {
       steps {
         script {
-          // Get the most recent commit message.
+          // Get the most recent commit message using the correct --pretty format.
           def commitMessage = bat(
             script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%B",
             returnStdout: true
           ).trim();
           echo "Latest commit message: ${commitMessage}"
 
-          // Use a regular expression to extract the JIRA ticket (e.g., 'PROJ-123').
-          def matcher = commitMessage =~ /(PROJ-\\d+)/;
+          // Use a regular expression to extract the JIRA ticket (e.g., 'SCRUM-123').
+          def matcher = commitMessage =~ /(SCRUM-\\d+)/;
           def jiraKey = matcher ? matcher[0][0] : "";
           
           if (jiraKey) {
             echo "Detected JIRA Issue Key: ${jiraKey}";
-            // Save JIRA key to an environment variable (so it can be used later in the pipeline)
+            // Save the JIRA key to an environment variable for use later in the pipeline.
             env.JIRA_ISSUE_KEY = jiraKey;
           } else {
             echo "No JIRA Issue Key detected in commit message.";
@@ -65,7 +65,7 @@ pipeline {
       }
       steps {
         script {
-          // Build the curl command to query the JIRA issue
+          // Build the curl command to query the JIRA issue.
           def jiraCmd = """
             cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
           """
@@ -73,12 +73,12 @@ pipeline {
           def jiraResponse = bat(script: jiraCmd, returnStdout: true).trim();
           echo "JIRA response: ${jiraResponse}";
 
-          // Parse the JSON response (ensure that Pipeline Utility Steps plugin is installed).
+          // Parse the JSON response (requires the Pipeline Utility Steps plugin)
           def issue = readJSON text: jiraResponse;
           def summary = issue.fields.summary ?: "No summary provided";
           def status = issue.fields.status?.name ?: "Unknown";
           
-          // Compose Slack message with JIRA details and commit info.
+          // Compose the Slack message
           def slackMessage = """
             *Code Push Notification*
             *Branch:* branch-dev
@@ -166,10 +166,10 @@ pipeline {
       steps {
         script {
           echo "🏗️ Building Next.js app..."
-        //   bat """
-        //     cd ${DEPLOY_DIR}
-        //     npm run build || exit /b 1
-        //   """
+          bat """
+            cd ${DEPLOY_DIR}
+            npm run build || exit /b 1
+          """
         }
       }
     }
