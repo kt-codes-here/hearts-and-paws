@@ -15,6 +15,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 
 
+
 export default function RehomerDashboard() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function RehomerDashboard() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [appointmentDateTime, setAppointmentDateTime] = useState("");
   const [appointments, setAppointments] = useState<any[]>([]);
-
+console.log(appointments)
   // Fetch authenticated user record
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
