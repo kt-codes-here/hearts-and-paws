@@ -382,6 +382,7 @@ export default function RehomerDashboard() {
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
+                        
                         1. SERVICE DISCLAIMER
                       </h3>
                       <p>All services booked through Hearts and Paws are provided by independent service providers. Hearts and Paws serves solely as a platform connecting pet owners with service providers and is not responsible for the quality, safety, or outcome of any services provided.</p>
