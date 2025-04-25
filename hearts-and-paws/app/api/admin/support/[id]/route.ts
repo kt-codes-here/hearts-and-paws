@@ -26,7 +26,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const updated = await prisma.supportTicket.update({
     where: { id: params.id },
     data: {
-      response: response || undefined,
+     
       status: status || undefined,
     },
   });

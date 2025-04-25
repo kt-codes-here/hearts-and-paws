@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     data: {
       userId: user!.id,
       subject: subject.trim(),
-      message: message.trim(),
+      messages: message.trim(),
       status: "Pending", // <-- ensures status is consistent
     },
   });
@@ -28,15 +28,29 @@ export async function POST(req: Request) {
 }
 
 
+
 export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+
   const tickets = await prisma.supportTicket.findMany({
     where: { userId: user!.id },
     orderBy: { createdAt: "desc" },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          content: true,
+          role: true,
+          createdAt: true,
+        },
+      },
+    },
   });
 
   return NextResponse.json(tickets);
 }
+
