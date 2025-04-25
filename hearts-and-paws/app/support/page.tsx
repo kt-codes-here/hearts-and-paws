@@ -73,9 +73,11 @@ export default function SupportPage() {
           rows={4}
           required
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={!subject || !message}>
+          Submit
+        </Button>
       </form>
-
+  
       {/* Submitted Ticket History */}
       <div>
         <h3 className="text-xl font-semibold mb-2">Your Submitted Tickets</h3>
@@ -86,34 +88,38 @@ export default function SupportPage() {
         ) : (
           <ul className="space-y-4">
             {tickets.map((ticket) => (
-              <li key={ticket.id} className="p-4 border rounded shadow-sm">
-                <p>
-                  <strong>Subject:</strong> {ticket.subject}
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
+              <li
+                key={ticket.id}
+                className="p-4 border rounded shadow-sm bg-white space-y-2"
+              >
+                <div className="flex justify-between items-center">
+                  <p>
+                    <strong>Subject:</strong> {ticket.subject}
+                  </p>
                   <span
-                    className={
-                      ticket.status === "closed"
-                        ? "text-red-600"
-                        : ticket.status === "in_progress"
-                        ? "text-yellow-600"
-                        : "text-blue-600"
-                    }
+                    className={`text-sm font-medium px-2 py-1 rounded ${
+                      ticket.status === "Closed"
+                        ? "bg-red-100 text-red-700"
+                        : ticket.status === "In Progress"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : ticket.status === "Resolved"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
                   >
                     {ticket.status}
                   </span>
-                </p>
-                <p className="mt-2">
+                </div>
+                <p>
                   <strong>Message:</strong> {ticket.message}
                 </p>
                 {ticket.response && (
-                  <p className="mt-2 text-green-700">
+                  <p className="text-green-700">
                     <strong>Admin Response:</strong> {ticket.response}
                   </p>
                 )}
-                <p className="text-sm text-gray-400 mt-1">
-                  {new Date(ticket.createdAt).toLocaleString()}
+                <p className="text-xs text-gray-400">
+                  Submitted on: {new Date(ticket.createdAt).toLocaleString()}
                 </p>
               </li>
             ))}
@@ -122,4 +128,5 @@ export default function SupportPage() {
       </div>
     </div>
   );
+  
 }

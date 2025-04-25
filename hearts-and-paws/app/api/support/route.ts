@@ -9,15 +9,18 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { subject, message } = await req.json();
-  const email = sessionClaims?.email;
+  if (!subject || !message) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
 
   const user = await prisma.user.findUnique({ where: { clerkId: userId } });
 
   const ticket = await prisma.supportTicket.create({
     data: {
       userId: user!.id,
-      subject,
-      message,
+      subject: subject.trim(),
+      message: message.trim(),
+      status: "Pending", // <-- ensures status is consistent
     },
   });
 
