@@ -6,13 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
+type Message = {
+  id: string;
+  content: string;
+  role: "user" | "admin";
+  createdAt: string;
+};
+
 type Ticket = {
   id: string;
   subject: string;
-  message: string;
   status: string;
-  response?: string | null;
   createdAt: string;
+  messages: Message[];
 };
 
 export default function SupportPage() {
@@ -20,7 +26,10 @@ export default function SupportPage() {
   const [message, setMessage] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reply, setReply] = useState<Record<string, string>>({});
+
   const router = useRouter();
+
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -54,6 +63,30 @@ export default function SupportPage() {
     }
   };
   
+  const handleReply = async (
+    e: React.FormEvent,
+    ticketId: string
+  ) => {
+    e.preventDefault();
+    const content = reply[ticketId];
+    if (!content.trim()) return;
+  
+    const res = await fetch(`/api/support/${ticketId}/message`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content }),
+    });
+  
+    if (res.ok) {
+      setReply((prev) => ({ ...prev, [ticketId]: "" }));
+      fetchTickets();
+    } else {
+      alert("Failed to send message.");
+    }
+  };
+  
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 p-8">
@@ -73,9 +106,11 @@ export default function SupportPage() {
           rows={4}
           required
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={!subject || !message}>
+          Submit
+        </Button>
       </form>
-
+  
       {/* Submitted Ticket History */}
       <div>
         <h3 className="text-xl font-semibold mb-2">Your Submitted Tickets</h3>
@@ -85,41 +120,76 @@ export default function SupportPage() {
           <p className="text-gray-500">No tickets submitted yet.</p>
         ) : (
           <ul className="space-y-4">
-            {tickets.map((ticket) => (
-              <li key={ticket.id} className="p-4 border rounded shadow-sm">
-                <p>
-                  <strong>Subject:</strong> {ticket.subject}
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={
-                      ticket.status === "closed"
-                        ? "text-red-600"
-                        : ticket.status === "in_progress"
-                        ? "text-yellow-600"
-                        : "text-blue-600"
-                    }
-                  >
-                    {ticket.status}
-                  </span>
-                </p>
-                <p className="mt-2">
-                  <strong>Message:</strong> {ticket.message}
-                </p>
-                {ticket.response && (
-                  <p className="mt-2 text-green-700">
-                    <strong>Admin Response:</strong> {ticket.response}
-                  </p>
-                )}
-                <p className="text-sm text-gray-400 mt-1">
-                  {new Date(ticket.createdAt).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
+  {tickets.map((ticket) => (
+    <li
+      key={ticket.id}
+      className="p-4 border rounded shadow-sm bg-white space-y-3"
+    >
+      <div className="flex justify-between items-center">
+        <h4 className="font-bold">{ticket.subject}</h4>
+        <span
+          className={`text-sm font-medium px-2 py-1 rounded ${
+            ticket.status === "Closed"
+              ? "bg-red-100 text-red-700"
+              : ticket.status === "In Progress"
+              ? "bg-yellow-100 text-yellow-700"
+              : ticket.status === "Resolved"
+              ? "bg-green-100 text-green-700"
+              : "bg-blue-100 text-blue-700"
+          }`}
+        >
+          {ticket.status}
+        </span>
+      </div>
+
+      <div className="bg-gray-50 rounded p-3 space-y-2 max-h-64 overflow-y-auto">
+        {ticket.messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex flex-col ${
+              msg.role === "admin" ? "items-end" : "items-start"
+            }`}
+          >
+            <div
+              className={`text-sm px-3 py-2 rounded max-w-xs ${
+                msg.role === "admin"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
+              <p>{msg.content}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(msg.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {ticket.status !== "Closed" && (
+        <form
+          onSubmit={(e) => handleReply(e, ticket.id)}
+          className="space-y-2 mt-2"
+        >
+          <Textarea
+            placeholder="Write a message..."
+            value={reply[ticket.id] || ""}
+            onChange={(e) =>
+              setReply((prev) => ({ ...prev, [ticket.id]: e.target.value }))
+            }
+          />
+          <Button type="submit" disabled={!reply[ticket.id]?.trim()}>
+            Send
+          </Button>
+        </form>
+      )}
+    </li>
+  ))}
+</ul>
+
         )}
       </div>
     </div>
   );
+  
 }
