@@ -199,7 +199,7 @@ export default function RehomerDashboard() {
         {/* Pets/Rehome Listings Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-6">Your Rehome Listings</h2>
-          {loadingRehomes ? (
+          {isLoaded ? (
             <p className="text-gray-600">Loading your pet listings...</p>
           ) : rehomes.length === 0 ? (
             <p className="text-gray-600">You haven't created any rehome listings yet.</p>

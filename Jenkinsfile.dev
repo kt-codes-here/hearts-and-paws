@@ -192,10 +192,10 @@ stage('Query JIRA and Notify Slack') {
       steps {
         script {
           echo "🏗️ Building Next.js app..."
-          bat """
-            cd ${DEPLOY_DIR}
-            npm run build || exit /b 1
-          """
+          // bat """
+          //   cd ${DEPLOY_DIR}
+          //   npm run build || exit /b 1
+          // """
         }
       }
     }
