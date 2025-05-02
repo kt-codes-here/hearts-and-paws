@@ -102,9 +102,9 @@ stage('Query JIRA and Notify Slack') {
       """.stripIndent()
 
       slackSend(
-        channel: "${env.SLACK_CHANNEL}",
+        channel: SLACK_CHANNEL,          // no interpolation
         message: slackMessage,
-        color: status.equalsIgnoreCase("Test") ? "warning" : "good",
+        color: status.equalsIgnoreCase("Test") ? 'warning' : 'good',
         botUser: true,
         tokenCredentialId: 'slack-webhook'
       )
