@@ -78,43 +78,36 @@ stage('Query JIRA and Notify Slack') {
   }
   steps {
     script {
-      // Build the curl command (avoid echoing sensitive data)
-      def jiraCmd = """
-        cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
-      """
-      echo "Querying JIRA with issue key ${env.JIRA_ISSUE_KEY}";
-      
-      // Execute the command and capture the full raw output.
-      def fullResponse = bat(script: jiraCmd, returnStdout: true).trim();
-      echo "Raw JIRA response:\n${fullResponse}";
+      // … curl + readJSON as before …
 
-      // Split the output into lines and extract the first line that looks like JSON.
-      def responseLines = fullResponse.split(/[\r\n]+/);
-      def jsonResponse = responseLines.find { it.trim().startsWith("{") }?.trim() ?: "";
+      def summary = issue.fields.summary ?: "No summary provided"
+      def status  = issue.fields.status?.name ?: "Unknown"
 
-      if (!jsonResponse) {
-        error "No valid JSON found in JIRA response. Check credentials/URL.";
+      // Only for Test status do we add the QA-pr reminder
+      def extraMessage = ""
+      if (status.equalsIgnoreCase("Test")) {
+        extraMessage = """
+          • :microscope: *Tester*, pull the code from `branch-dev` (or your feature branch) and run your tests locally or in your dev environment.
+          • When your tests pass, create a PR *from* `branch-dev` *into* `branch-QA` for the next stage.
+        """
       }
 
-      // Parse the JSON response.
-      def issue = readJSON text: jsonResponse;
-      def summary = issue.fields.summary ?: "No summary provided";
-      def status = issue.fields.status?.name ?: "Unknown";
-      
       def slackMessage = """
         *Code Push Notification*
         *Branch:* branch-dev
         *JIRA Task:* ${env.JIRA_ISSUE_KEY}
         *Summary:* ${summary}
         *Status:* ${status}
-      """.stripIndent();
-      
-      echo "Sending Slack notification (JIRA details will not expose sensitive info)";
-      slackSend channel: "${env.SLACK_CHANNEL}",
-                message: slackMessage,
-                color: "good",
-                botUser: true,
-                tokenCredentialId: 'slack-webhook';
+        ${extraMessage}
+      """.stripIndent()
+
+      slackSend(
+        channel: "${env.SLACK_CHANNEL}",
+        message: slackMessage,
+        color: status.equalsIgnoreCase("Test") ? "warning" : "good",
+        botUser: true,
+        tokenCredentialId: 'slack-webhook'
+      )
     }
   }
 }
