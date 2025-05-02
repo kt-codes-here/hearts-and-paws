@@ -42,6 +42,9 @@ export default function Home() {
           } else if (userData.role === 3) {
             router.push("/service-provider-dashboard");
           }
+          else if (userData.role === 4) {
+            router.push("/admin/support"); // 🎯 Admin gets routed here
+          }
         })
         .catch((err) => console.error("Error saving user:", err));
     }

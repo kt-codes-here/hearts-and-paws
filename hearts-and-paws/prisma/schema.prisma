@@ -36,6 +36,10 @@ model User {
   appointments    Appointment[]
   reviews         Review[]
   payments         Payment[]
+  supportTickets SupportTicket[] // ✅ Add this
+  supportMessages SupportMessage[] // 👈 this is required by Prisma
+
+
 }
 
 model Pet {
@@ -201,3 +205,26 @@ model Payment {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
+
+model SupportTicket {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  status    String   @default("open") // open, in_progress, closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  SupportMessage[]
+}
+
+model SupportMessage {
+  id         String   @id @default(uuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  role       String   // "user" or "admin"
+  content    String
+  createdAt  DateTime @default(now())
+}
+
