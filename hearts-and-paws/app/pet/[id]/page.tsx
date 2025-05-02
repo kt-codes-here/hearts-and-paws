@@ -116,6 +116,7 @@ export default async function PetPage({ params }: { params: { id: string } }) {
   return (
     <>
       <PetProfile pet={pet} />
+      
     </>
   );
 }
