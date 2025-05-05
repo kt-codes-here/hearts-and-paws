@@ -2,28 +2,23 @@ pipeline {
   agent any
 
   environment {
-    NODE_VERSION = '22.14.0'
-    DATABASE_URL = credentials('DATABASE_URL')
-    NEXT_PUBLIC_API_URL = 'https://api.hearts-and-paws.dev'
+    NODE_VERSION                   = '22.14.0'
+    DATABASE_URL                   = credentials('DATABASE_URL')
+    NEXT_PUBLIC_API_URL            = 'https://api.hearts-and-paws.dev'
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = credentials('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
-    CLERK_SECRET_KEY = credentials('CLERK_SECRET_KEY')
-    DEPLOY_DIR = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
-    APP_NAME = 'Slack-notification-service'
-    
-    // JIRA configuration
-    JIRA_BASE_URL = credentials('JIRA_BASE_URL')
-    JIRA_USERNAME = credentials('jira-username')
-    JIRA_API_TOKEN = credentials('jira-admin-token')
-    
-    // Slack configuration
-    SLACK_CHANNEL = credentials('SLACK_CHANNEL')
+    CLERK_SECRET_KEY               = credentials('CLERK_SECRET_KEY')
+    DEPLOY_DIR                     = 'E:\\jenkinnodes\\workspace\\Deployment to Dev\\hearts-and-paws'
+    APP_NAME                       = 'Slack-notification-service'
+    JIRA_BASE_URL                  = credentials('JIRA_BASE_URL')
+    JIRA_USERNAME                  = credentials('jira-username')
+    JIRA_API_TOKEN                 = credentials('jira-admin-token')
+    SLACK_CHANNEL                  = credentials('SLACK_CHANNEL')
   }
 
   stages {
     stage('Checkout Code') {
       steps {
         script {
-          echo "📥 Pulling latest changes from branch-dev"
           bat """
             cd ${DEPLOY_DIR}
             git reset --hard HEAD
@@ -33,114 +28,80 @@ pipeline {
       }
     }
 
- stage('Extract JIRA Issue from Commit') {
+    stage('Extract JIRA Issue from Commit') {
       steps {
         script {
-          // Use double percent for Windows so that git gets a literal "%B".
           def commitMessageOutput = bat(
             script: "cd ${DEPLOY_DIR} && git log -1 --pretty=%%B",
             returnStdout: true
-          ).trim();
-          
-          echo "Raw commit message output: ${commitMessageOutput}"
+          ).trim()
 
-          // Split into lines and take the last non-empty line as the commit message.
-          def commitMessageLines = commitMessageOutput.split(/[\r\n]+/);
-          def commitMessage = "";
-          for (int i = commitMessageLines.size() - 1; i >= 0; i--) {
-            if (commitMessageLines[i].trim()) {
-              commitMessage = commitMessageLines[i].trim();
-              break;
-            }
-          }
+          def commitLines = commitMessageOutput.split(/[\r\n]+/)
+          def commitMessage = commitLines.reverse().find { it.trim() }
           
-          echo "Latest commit message: ${commitMessage}"
-
-          // Use a regular expression to extract the JIRA ticket key (e.g., "SCRUM-35").
-          def matcher = commitMessage =~ /(SCRUM-\d+)/;
-          def jiraKey = matcher ? matcher[0][0] : "";
-          
-          if (jiraKey) {
-            echo "Detected JIRA Issue Key: ${jiraKey}";
-            // Store the JIRA key in an environment variable for later use.
-            env.JIRA_ISSUE_KEY = jiraKey;
-          } else {
-            echo "No JIRA Issue Key detected in commit message.";
-            env.JIRA_ISSUE_KEY = "";
-          }
+          def matcher = commitMessage =~ /(SCRUM-\d+)/
+          env.JIRA_ISSUE_KEY = matcher ? matcher[0][0] : ""
+          echo "Detected JIRA Issue Key: ${env.JIRA_ISSUE_KEY}"
         }
       }
     }
 
-stage('Query JIRA and Notify Slack') {
-  when {
-    expression { return env.JIRA_ISSUE_KEY && env.JIRA_ISSUE_KEY != "" }
-  }
-  steps {
-    script {
-      // Build the curl command (avoid echoing sensitive data)
-      def jiraCmd = """
-        cd ${DEPLOY_DIR} && curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} -X GET -H "Content-Type: application/json" "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
-      """
-      echo "Querying JIRA with issue key ${env.JIRA_ISSUE_KEY}";
-      
-      // Execute the command and capture the full raw output.
-      def fullResponse = bat(script: jiraCmd, returnStdout: true).trim();
-      echo "Raw JIRA response:\n${fullResponse}";
-
-      // Split the output into lines and extract the first line that looks like JSON.
-      def responseLines = fullResponse.split(/[\r\n]+/);
-      def jsonResponse = responseLines.find { it.trim().startsWith("{") }?.trim() ?: "";
-
-      if (!jsonResponse) {
-        error "No valid JSON found in JIRA response. Check credentials/URL.";
+    stage('Query JIRA and Notify Slack') {
+      when {
+        expression { return env.JIRA_ISSUE_KEY }
       }
+      steps {
+        script {
+          def full = bat(
+            script: """
+              cd ${DEPLOY_DIR} && \
+              curl -s -u ${env.JIRA_USERNAME}:${env.JIRA_API_TOKEN} \
+                   -X GET -H "Content-Type: application/json" \
+                   "${env.JIRA_BASE_URL}/rest/api/2/issue/${env.JIRA_ISSUE_KEY}"
+            """,
+            returnStdout: true
+          ).trim()
 
-      // Parse the JSON response.
-      def issue = readJSON text: jsonResponse;
-      def summary = issue.fields.summary ?: "No summary provided";
-      def status = issue.fields.status?.name ?: "Unknown";
+          def jsonLine = full.split(/[\r\n]+/).find { it.startsWith("{") }
+          def issue     = readJSON text: jsonLine
 
-      def extraMessage = ""
-      if (status.equalsIgnoreCase("Test")) {
-        extraMessage = """
-          • :microscope: *Tester*, please go through the feature and test it.
-          • Once testing is complete, open a PR into `branch-QA`.
-        """
+          def summary = issue.fields.summary ?: "No summary"
+          def status  = issue.fields.status.name ?: "Unknown"
+
+          def extra = status.equalsIgnoreCase("Test") ? """
+            • :microscope: *Tester*, please go through the feature and test it.
+            • Once testing is complete, please open a PR into `branch-QA`.
+          """ : ""
+
+          def msg = """
+            *Code Push Notification*
+            *Branch:* branch-dev
+            *JIRA Task:* ${env.JIRA_ISSUE_KEY}
+            *Summary:* ${summary}
+            *Status:* ${status}
+            ${extra}
+          """.stripIndent()
+
+          slackSend(
+            channel: "${SLACK_CHANNEL}",
+            message: msg,
+            color: status.equalsIgnoreCase("Test") ? "warning" : "good",
+            botUser: true,
+            tokenCredentialId: 'slack-webhook'
+          )
+        }
       }
-      
-      def slackMessage = """
-        *Code Push Notification*
-        *Branch:* branch-dev
-        *JIRA Task:* ${env.JIRA_ISSUE_KEY}
-        *Summary:* ${summary}
-        *Status:* ${status}
-         ${extraMessage}
-      """.stripIndent();
-      
-      echo "Sending Slack notification (JIRA details will not expose sensitive info)";
-      slackSend channel: "${env.SLACK_CHANNEL}",
-                message: slackMessage,
-                 color: status.equalsIgnoreCase("Test") ? "warning" : "good",
-                botUser: true,
-                tokenCredentialId: 'slack-webhook';
     }
-  }
-}
-
 
     stage('Set Up Environment') {
       steps {
         script {
-          echo "⚙️ Creating .env file..."
           bat """
             cd ${DEPLOY_DIR}
             echo DATABASE_URL=${DATABASE_URL} > .env
             echo CLERK_SECRET_KEY=${CLERK_SECRET_KEY} >> .env
             echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} >> .env
             echo NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} >> .env
-            echo "✅ .env file created successfully!"
-            type .env
           """
         }
       }
@@ -149,13 +110,12 @@ stage('Query JIRA and Notify Slack') {
     stage('Install Node.js') {
       steps {
         script {
-          echo "🔧 Ensuring Node.js ${NODE_VERSION} is installed..."
           bat """
             set NVM_DIR=C:\\Users\\Administrator\\AppData\\Roaming\\nvm
             set NODEJS_HOME=%NVM_DIR%\\v${NODE_VERSION}
             set PATH=%NODEJS_HOME%;%PATH%
-            node -v || exit /b 1
-            npm -v || exit /b 1
+            node -v
+            npm -v
           """
         }
       }
@@ -164,10 +124,9 @@ stage('Query JIRA and Notify Slack') {
     stage('Install Dependencies') {
       steps {
         script {
-          echo "📦 Installing dependencies..."
           bat """
             cd ${DEPLOY_DIR}
-            npm install --force || exit /b 1
+            npm install --force
           """
         }
       }
@@ -176,10 +135,9 @@ stage('Query JIRA and Notify Slack') {
     stage('Generate Prisma Client') {
       steps {
         script {
-          echo "🛠️ Generating Prisma Client..."
           bat """
             cd ${DEPLOY_DIR}
-            npx prisma generate || exit /b 1
+            npx prisma generate
           """
         }
       }
@@ -188,10 +146,9 @@ stage('Query JIRA and Notify Slack') {
     stage('Run Prisma Migrations') {
       steps {
         script {
-          echo "📜 Applying Prisma Migrations..."
           bat """
             cd ${DEPLOY_DIR}
-            npx prisma migrate deploy || exit /b 1
+            npx prisma migrate deploy
           """
         }
       }
@@ -201,34 +158,45 @@ stage('Query JIRA and Notify Slack') {
       steps {
         script {
           echo "🏗️ Building Next.js app..."
-          // bat """
-          //   cd ${DEPLOY_DIR}
-          //   npm run build || exit /b 1
-          // """
+          // bat "cd ${DEPLOY_DIR} && npm run build"
         }
       }
     }
 
+    stage('Start Application') {
+      steps {
+        script {
+          bat """
+            cd ${DEPLOY_DIR}
+            taskkill /F /IM node.exe || echo "No running process found"
+            start /B npm start > nextjs.log 2>&1
+          """
+        }
+      }
+    }
+  }  // ← closes stages
 
   post {
     always {
       script {
         withCredentials([
           string(credentialsId: 'SLACK_CHANNEL', variable: 'SLACK_CHANNEL'),
-          string(credentialsId: 'slack-webhook', variable: 'SLACK_WEBHOOK')
+          string(credentialsId: 'slack-webhook',  variable: 'SLACK_WEBHOOK')
         ]) {
-          def message = currentBuild.result == 'SUCCESS' ?
-            "✅ *Deployment Successful!* 🎉\n*Application:* ${APP_NAME}\n*Environment:* DEV" :
-            "❌ *Deployment Failed!* 🚨\n*Application:* ${APP_NAME}\n*Environment:* DEV";
-          def color = currentBuild.result == 'SUCCESS' ? "good" : "danger";
-          slackSend channel: "${SLACK_CHANNEL}",
-                    message: message,
-                    color: color,
-                    botUser: true,
-                    tokenCredentialId: 'slack-webhook';
+          def msg  = currentBuild.result == 'SUCCESS' ?
+                     "✅ *Deployment Successful!* 🎉\n*App:* ${APP_NAME}\n*Env:* DEV" :
+                     "❌ *Deployment Failed!* 🚨\n*App:* ${APP_NAME}\n*Env:* DEV"
+          def col  = currentBuild.result == 'SUCCESS' ? "good" : "danger"
+
+          slackSend(
+            channel: "${SLACK_CHANNEL}",
+            message: msg,
+            color: col,
+            botUser: true,
+            tokenCredentialId: 'slack-webhook'
+          )
         }
       }
     }
   }
-}
-}
+}  // ← closes pipeline
