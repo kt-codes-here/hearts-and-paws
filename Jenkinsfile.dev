@@ -231,3 +231,4 @@ stage('Query JIRA and Notify Slack') {
     }
   }
 }
+}
