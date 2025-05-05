@@ -16,12 +16,15 @@ type Pet = {
   images?: string[];
   additionalInfo?: string;
   createdAt: string;
+  compatibility: string;
+  activityLevel: string;
 };
 
 export default function PetListings() {
   const [pets, setPets] = useState<Pet[]>([]);
+  const [allPets, setAllPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     category: "",
@@ -30,48 +33,50 @@ export default function PetListings() {
     gender: "",
     age: "",
     size: "",
-    location: ""
+    location: "",
+    compatibility: "",
+    activityLevel: "",
   });
 
   useEffect(() => {
-    // Build the query parameters for filtering
-    const queryParams = new URLSearchParams();
-    
-    if (filters.category) queryParams.append("category", filters.category);
-    if (filters.breed) queryParams.append("breed", filters.breed);
-    if (filters.color) queryParams.append("color", filters.color);
-    if (filters.gender) queryParams.append("gender", filters.gender);
-    if (filters.age && filters.age !== "0") queryParams.append("age", filters.age);
-    if (filters.size) queryParams.append("size", filters.size);
-    if (filters.location) queryParams.append("location", filters.location);
-    
-    // Construct the API URL with query parameters
-    const apiUrl = `/api/pets/fetch-pets?${queryParams.toString()}`;
-    
-    // Debugging to verify the query parameters
-    console.log("API URL:", apiUrl);
-    
     // Fetch pets from API
     setLoading(true);
-    fetch(apiUrl)
+    fetch("/api/pets/fetch-pets")
       .then((res) => res.json())
       .then((data) => {
-        console.log("Received pets:", data.pets?.length || 0);
-        setPets(data.pets || []);
-        console.log(data.pets)
+        // Add mock compatibility and activity level data to each pet
+        const petsWithMockData = data.pets.map((pet: Pet) => ({
+          ...pet,
+          compatibility: ["Good with Kids", "Good with Other Pets", "Good with Strangers", "Needs a Companion"][Math.floor(Math.random() * 4)],
+          activityLevel: ["Low", "Moderate", "High", "Very High"][Math.floor(Math.random() * 4)],
+        }));
+        setPets(petsWithMockData);
+        setAllPets(petsWithMockData);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching pets:", err);
         setLoading(false);
       });
-  }, [filters]);
+  }, []);
 
   const handleFilterChange = (filterType: string, value: string) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [filterType]: value
+      [filterType]: value,
     }));
+
+    // Filter pets based on the selected filter
+    const filteredPets = allPets.filter((pet) => {
+      if (filterType === "compatibility" && value) {
+        return pet.compatibility === value;
+      }
+      if (filterType === "activityLevel" && value) {
+        return pet.activityLevel === value;
+      }
+      return true; // Keep the pet if no filter is applied
+    });
+    setPets(filteredPets);
   };
 
   const applyFilters = () => {
@@ -88,8 +93,13 @@ export default function PetListings() {
       gender: "",
       age: "",
       size: "",
-      location: ""
+      location: "",
+      compatibility: "",
+      activityLevel: "",
     });
+
+    // Reset the pets list to the original state
+    setPets(allPets);
   };
 
   if (loading && pets.length === 0) {
@@ -103,21 +113,19 @@ export default function PetListings() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#675bc8] mb-8">
-          Find Your Perfect Pet
-        </h1>
-        
+        <h1 className="text-3xl font-bold text-[#675bc8] mb-8">Find Your Perfect Pet</h1>
+
         <div className="flex flex-col md:flex-row gap-8">
           {/* Filters sidebar */}
           <div className="w-full md:w-1/4">
-            <FilterSidebar 
+            <FilterSidebar
               filters={filters}
               onFilterChange={handleFilterChange}
               onApplyFilters={applyFilters}
               onResetFilters={resetFilters}
             />
           </div>
-          
+
           {/* Pet listings */}
           <div className="w-full md:w-3/4">
             {/* Active filters display */}
@@ -125,11 +133,11 @@ export default function PetListings() {
               <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-gray-700 font-medium">Active filters:</span>
-                  
+
                   {filters.category && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Pet Type: {filters.category}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("category", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -137,11 +145,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.breed && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Breed: {filters.breed}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("breed", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -149,11 +157,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.color && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Color: {filters.color}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("color", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -161,11 +169,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.gender && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Gender: {filters.gender}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("gender", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -173,11 +181,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.age && filters.age !== "0" && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Age: Up to {filters.age} years
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("age", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -185,11 +193,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.size && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Size: {filters.size}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("size", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -197,11 +205,11 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
+
                   {filters.location && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
                       Location: {filters.location}
-                      <button 
+                      <button
                         onClick={() => handleFilterChange("location", "")}
                         className="ml-2 text-purple-600 hover:text-purple-800"
                       >
@@ -209,8 +217,8 @@ export default function PetListings() {
                       </button>
                     </span>
                   )}
-                  
-                  <button 
+
+                  <button
                     onClick={resetFilters}
                     className="text-sm text-purple-600 hover:text-purple-800 hover:underline ml-auto"
                   >
@@ -219,7 +227,7 @@ export default function PetListings() {
                 </div>
               </div>
             )}
-            
+
             {/* Pet listings display */}
             {loading ? (
               <div className="flex justify-center p-8">
@@ -227,9 +235,7 @@ export default function PetListings() {
               </div>
             ) : pets.length === 0 ? (
               <div className="bg-white rounded-lg p-8 text-center">
-                <p className="text-gray-600 text-lg">
-                  No pets match your current filters. Try adjusting your criteria.
-                </p>
+                <p className="text-gray-600 text-lg">No pets match your current filters. Try adjusting your criteria.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,4 +271,4 @@ function isNewPet(createdAt: string): boolean {
   const diffTime = Math.abs(now.getTime() - created.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays <= 7;
-} 
+}
