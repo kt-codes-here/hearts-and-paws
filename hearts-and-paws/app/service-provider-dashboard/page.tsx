@@ -8,7 +8,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import AvailabilitySelector from "@/components/global/availability";
 import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
-import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
+import { Edit3, Instagram, Mail, MapPin, Phone, X, Star } from "lucide-react";
+import ReviewComponent from "@/components/ui/ReviewComponent";
 
 // Initialize Stripe outside the component.
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -37,10 +38,12 @@ export default function ServiceProviderDashboard() {
     name: "",
     description: "",
     price: "",
-    duration: ""
+    duration: "",
   });
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [appointmentDateTime, setAppointmentDateTime] = useState("");
+  const [providerReviews, setProviderReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
   useEffect(() => {
     if (isSignedIn && user) {
@@ -73,6 +76,22 @@ export default function ServiceProviderDashboard() {
     }
   }, [userData]);
 
+  useEffect(() => {
+    if (userData) {
+      setIsLoadingReviews(true);
+      fetch(`/api/review?providerId=${userData.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setProviderReviews(Array.isArray(data) ? data : []);
+          setIsLoadingReviews(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching provider reviews:", err);
+          setIsLoadingReviews(false);
+        });
+    }
+  }, [userData]);
+
   // Handle new service form inputs
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setNewService({ ...newService, [e.target.name]: e.target.value });
@@ -89,8 +108,8 @@ export default function ServiceProviderDashboard() {
           ...newService,
           providerId: userData.id,
           price: parseFloat(newService.price),
-          duration: parseInt(newService.duration)
-        })
+          duration: parseInt(newService.duration),
+        }),
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -106,13 +125,8 @@ export default function ServiceProviderDashboard() {
   };
 
   // Filter appointments
-  const requestedAppointments = appointments.filter(
-    (apt) => apt.status !== "confirmed"
-  );
-  const upcomingAppointments = appointments.filter(
-    (apt) =>
-      apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
-  );
+  const requestedAppointments = appointments.filter((apt) => apt.status !== "confirmed");
+  const upcomingAppointments = appointments.filter((apt) => apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date());
 
   // Payment handler for accepted appointments
   const handleMakePayment = async (apt: any) => {
@@ -126,7 +140,7 @@ export default function ServiceProviderDashboard() {
           providerId: apt.provider.userId,
           appointmentDate: apt.appointmentDate,
           servicePrice: apt.service.price,
-          appointmentId: apt.id
+          appointmentId: apt.id,
         }),
       });
       if (!res.ok) {
@@ -151,13 +165,11 @@ export default function ServiceProviderDashboard() {
     fetch("/api/appoinment", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appointmentId, status, feedback })
+      body: JSON.stringify({ appointmentId, status, feedback }),
     })
       .then((res) => res.json())
       .then((updated) => {
-        setAppointments((prev) =>
-          prev.map((apt) => (apt.id === appointmentId ? updated : apt))
-        );
+        setAppointments((prev) => prev.map((apt) => (apt.id === appointmentId ? updated : apt)));
       })
       .catch((err) => console.error("Error updating appointment:", err));
   };
@@ -171,20 +183,30 @@ export default function ServiceProviderDashboard() {
       {/* Header Section */}
       <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl shadow-lg p-8 mb-8">
         <h1 className="text-4xl font-bold mb-2">Service Provider Dashboard</h1>
-        <p className="text-xl mb-4">Welcome, {userData.email}! (Role: {roleNames[userData.role]})</p>
+        <p className="text-xl mb-4">
+          Welcome, {userData.email}! (Role: {roleNames[userData.role]})
+        </p>
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <Link
             href="/rehomer-dashboard/pet-registration"
             className="px-6 py-3 bg-white text-purple-600 text-lg font-semibold rounded-lg hover:bg-gray-100 transition-transform transform hover:scale-105 flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
             </svg>
             Register New Pet
           </Link>
         </div>
       </header>
-
       {/* New Service Dialog */}
       <Dialog.Root
         onOpenChange={(open) => {
@@ -194,19 +216,18 @@ export default function ServiceProviderDashboard() {
         }}
       >
         <Dialog.Trigger asChild>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-            Add New Service
-          </button>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add New Service</button>
         </Dialog.Trigger>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
           <Dialog.Content className="fixed top-1/2 left-1/2 w-full max-w-md transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-md shadow-xl">
-            <Dialog.Title className="text-xl font-semibold mb-4">
-              Add New Service
-            </Dialog.Title>
+            <Dialog.Title className="text-xl font-semibold mb-4">Add New Service</Dialog.Title>
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-gray-700 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-gray-700 mb-1"
+                >
                   Service Name
                 </label>
                 <input
@@ -219,7 +240,10 @@ export default function ServiceProviderDashboard() {
                 />
               </div>
               <div>
-                <label htmlFor="description" className="block text-gray-700 mb-1">
+                <label
+                  htmlFor="description"
+                  className="block text-gray-700 mb-1"
+                >
                   Description
                 </label>
                 <textarea
@@ -233,7 +257,10 @@ export default function ServiceProviderDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="price" className="block text-gray-700 mb-1">
+                  <label
+                    htmlFor="price"
+                    className="block text-gray-700 mb-1"
+                  >
                     Price
                   </label>
                   <input
@@ -246,7 +273,10 @@ export default function ServiceProviderDashboard() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="duration" className="block text-gray-700 mb-1">
+                  <label
+                    htmlFor="duration"
+                    className="block text-gray-700 mb-1"
+                  >
                     Duration (minutes)
                   </label>
                   <input
@@ -262,12 +292,13 @@ export default function ServiceProviderDashboard() {
             </div>
             <div className="flex justify-end mt-6 space-x-3">
               <Dialog.Close asChild>
-                <button className="px-4 py-2 border rounded border-gray-300 hover:bg-gray-100 transition">
-                  Cancel
-                </button>
+                <button className="px-4 py-2 border rounded border-gray-300 hover:bg-gray-100 transition">Cancel</button>
               </Dialog.Close>
               <Dialog.Close asChild>
-                <button onClick={addService} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                <button
+                  onClick={addService}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                >
                   Add Service
                 </button>
               </Dialog.Close>
@@ -275,7 +306,6 @@ export default function ServiceProviderDashboard() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-
       {/* My Services Section */}
       <section className="mt-8">
         <h2 className="text-2xl font-bold mb-4">My Services</h2>
@@ -284,24 +314,23 @@ export default function ServiceProviderDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {services.map((service) => (
-              <div key={service.id} className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition">
+              <div
+                key={service.id}
+                className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition"
+              >
                 <h3 className="text-xl font-bold">{service.name}</h3>
                 <p className="mt-2 text-gray-700">{service.description}</p>
                 <p className="mt-2 font-medium">Price: ${service.price.toFixed(2)}</p>
-                {service.duration !== undefined && (
-                  <p className="mt-2 font-medium">Duration: {service.duration} minutes</p>
-                )}
+                {service.duration !== undefined && <p className="mt-2 font-medium">Duration: {service.duration} minutes</p>}
               </div>
             ))}
           </div>
         )}
       </section>
-
       {/* Availability Selector */}
       <section className="mt-8">
         <AvailabilitySelector />
       </section>
-
       {/* Appointment Requests Section */}
       <section className="mt-12 bg-white shadow rounded-xl p-8">
         <h2 className="text-2xl font-bold mb-4">Appointment Requests</h2>
@@ -310,10 +339,11 @@ export default function ServiceProviderDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {appointments.map((apt) => (
-              <div key={apt.id} className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition">
-                <p className="font-bold text-lg">
-                  {apt.service?.name || "Service info unavailable"}
-                </p>
+              <div
+                key={apt.id}
+                className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition"
+              >
+                <p className="font-bold text-lg">{apt.service?.name || "Service info unavailable"}</p>
                 <p className="mt-2 text-gray-700">Scheduled: {new Date(apt.appointmentDate).toLocaleString()}</p>
                 <p className="mt-2 font-medium text-gray-600">Status: {apt.status}</p>
                 {apt.status === "pending" && (
@@ -332,15 +362,12 @@ export default function ServiceProviderDashboard() {
                     </button>
                   </div>
                 )}
-                {apt.feedback && (
-                  <p className="mt-1 text-sm text-gray-600">Feedback: {apt.feedback}</p>
-                )}
+                {apt.feedback && <p className="mt-1 text-sm text-gray-600">Feedback: {apt.feedback}</p>}
               </div>
             ))}
           </div>
         )}
       </section>
-
       {/* Upcoming Appointments Section */}
       <section className="mt-12 bg-white shadow rounded-xl p-8">
         <h2 className="text-2xl font-bold mb-4">Upcoming Appointments</h2>
@@ -349,15 +376,13 @@ export default function ServiceProviderDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {upcomingAppointments.map((apt) => (
-              <div key={apt.id} className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition">
-                <p className="font-bold text-lg">
-                  {apt.service?.name || "Service info unavailable"}
-                </p>
-                <p className="mt-2 text-gray-700">
-                  Scheduled: {new Date(apt.appointmentDate).toLocaleString()}
-                </p>
+              <div
+                key={apt.id}
+                className="border rounded-lg p-6 bg-gray-50 shadow hover:shadow-xl transition"
+              >
+                <p className="font-bold text-lg">{apt.service?.name || "Service info unavailable"}</p>
+                <p className="mt-2 text-gray-700">Scheduled: {new Date(apt.appointmentDate).toLocaleString()}</p>
                 <p className="mt-2 font-medium text-green-600">Status: {apt.status}</p>
-                {/* Instead of invoice, show time remaining (Countdown component if implemented) */}
                 <div className="mt-2 text-sm text-gray-600">
                   {(() => {
                     const diff = new Date(apt.appointmentDate).getTime() - Date.now();
@@ -368,8 +393,67 @@ export default function ServiceProviderDashboard() {
                     return `${days}d ${hours}h ${minutes}m remaining`;
                   })()}
                 </div>
+                <button
+                  onClick={() => updateAppointmentStatus(apt.id, "completed")}
+                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                >
+                  Mark as Completed
+                </button>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+      {/* Provider Reviews Section */}
+      <section className="mt-12 bg-white shadow rounded-xl p-8">
+        <h2 className="text-2xl font-bold mb-4">Customer Reviews</h2>
+
+        {isLoadingReviews ? (
+          <p className="text-gray-600">Loading reviews...</p>
+        ) : providerReviews.length === 0 ? (
+          <p className="text-gray-600">No reviews yet. Complete appointments with customers to receive reviews.</p>
+        ) : (
+          <div>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <div className="mr-4">
+                  <span className="text-3xl font-bold text-yellow-600">{(providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerReviews.length).toFixed(1)}</span>
+                  <span className="text-xl text-gray-500">/5</span>
+                </div>
+
+                <div>
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={20}
+                        className={`${star <= Math.round(providerReviews.reduce((sum, review) => sum + review.rating, 0) / providerReviews.length) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-gray-600">Based on {providerReviews.length} reviews</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {providerReviews.map((review) => (
+                <ReviewComponent
+                  key={review.id}
+                  reviewId={review.id}
+                  initialRating={review.rating}
+                  initialComment={review.comment}
+                  providerId={review.providerId}
+                  customerId={review.customerId}
+                  appointmentId={review.appointmentId}
+                  editable={true}
+                  onReviewCreated={handleReviewCreated}
+                  onReviewUpdated={handleReviewUpdated}
+                  onReviewDeleted={handleReviewDeleted}
+                  appointmentStatus="completed"
+                />
+              ))}
+            </div>
           </div>
         )}
       </section>

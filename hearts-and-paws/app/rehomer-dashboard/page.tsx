@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import { Edit3, Instagram, Mail, MapPin, Phone, X } from "lucide-react";
 import Countdown from "../../components/ui/countDown"; // adjust the path if stored in a separate file
+import ReviewComponent from "@/components/ui/ReviewComponent";
 
 // Initialize Stripe outside the component only if the key exists
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
@@ -33,6 +35,10 @@ export default function RehomerDashboard() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [completedAppointments, setCompletedAppointments] = useState<any[]>([]);
+  const [userReviews, setUserReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState<string | null>(null);
 
   // Fetch authenticated user record
   useEffect(() => {
@@ -94,10 +100,24 @@ export default function RehomerDashboard() {
         .then((res) => res.json())
         .then((data) => {
           setAppointments(Array.isArray(data) ? data : []);
+
+          // Filter for completed appointments (past confirmed appointments)
+          const completed = data.filter((apt: any) => apt.status === "completed");
+          console.log("Filtered Completed Appointments:", completed); // Debugging
+          setCompletedAppointments(completed);
         })
         .catch((err) => console.error("Error fetching appointments:", err));
     }
   }, [isLoaded, isSignedIn, user, userData]);
+
+  // Add a new useEffect to fetch user's reviews
+  useEffect(() => {
+    const reviews = localStorage.getItem("reviews");
+    if (reviews) {
+      setUserReviews(JSON.parse(reviews)); // Load reviews from localStorage
+    }
+    setIsLoadingReviews(false);
+  }, []);
 
   const handlePetClick = (e: React.MouseEvent, petId: string) => {
     e.preventDefault();
@@ -139,14 +159,24 @@ export default function RehomerDashboard() {
 
   // Separate appointments into two categories:
   // 1. Requested Appointments: appointments with status NOT "confirmed".
-  const requestedAppointments = appointments.filter(
-    (apt) => apt.status !== "confirmed"
-  );
+  const requestedAppointments = appointments.filter((apt) => apt.status !== "confirmed");
   // 2. Upcoming Appointments: appointments with status "confirmed" and a future appointment date.
-  const upcomingAppointments = appointments.filter(
-    (apt) =>
-      apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date()
-  );
+  const upcomingAppointments = appointments.filter((apt) => apt.status === "confirmed" && new Date(apt.appointmentDate) > new Date());
+
+  // Add a function to handle when a new review is created
+  const handleReviewCreated = (newReview: any) => {
+    setUserReviews((prev) => [newReview, ...prev]); // Add the new review to the list
+  };
+
+  // Add a function to handle when a review is updated
+  const handleReviewUpdated = (updatedReview: any) => {
+    setUserReviews(userReviews.map((review) => (review.id === updatedReview.id ? updatedReview : review)));
+  };
+
+  // Add a function to handle when a review is deleted
+  const handleReviewDeleted = (reviewId: string) => {
+    setUserReviews((prev) => prev.filter((review) => review.id !== reviewId)); // Remove the deleted review
+  };
 
   if (!isLoaded) {
     return (
@@ -263,7 +293,10 @@ export default function RehomerDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {services.map((service) => (
-                <div key={service.id} className="border rounded p-4 shadow hover:shadow-lg transition">
+                <div
+                  key={service.id}
+                  className="border rounded p-4 shadow hover:shadow-lg transition"
+                >
                   <h3 className="text-xl font-bold">{service.name}</h3>
                   <p className="mt-2 text-gray-700">{service.description}</p>
                   <p className="mt-2 font-medium">Price: ${service.price.toFixed(2)}</p>
@@ -628,7 +661,7 @@ export default function RehomerDashboard() {
                   </div>
                 </div>
 
-                <div className="sticky bottom-0 pt-4 pb-2 bg-white border-t border-gray-200 mt-6 flex justify-end">
+                <div className="sticky bottom-0 pt-4 pb-2 bg-white border border-gray-200 mt-6 flex justify-end">
                   <Dialog.Close asChild>
                     <button className="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">I Understand</button>
                   </Dialog.Close>
@@ -646,19 +679,16 @@ export default function RehomerDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {requestedAppointments.map((apt) => (
-                <div key={apt.id} className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg">
-                  <p className="font-bold text-lg">
-                    {apt.service?.name || "Service info unavailable"}
+                <div
+                  key={apt.id}
+                  className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg"
+                >
+                  <p className="font-bold text-lg">{apt.service?.name || "Service info unavailable"}</p>
+                  <p className="mt-2 text-gray-700">Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}</p>
+                  <p className="mt-2 font-medium text-gray-600">
+                    Status: <span className={`${apt.status === "pending" ? "text-yellow-500" : "text-blue-500"}`}>{apt.status}</span>
                   </p>
-                  <p className="mt-2 text-gray-700">
-                    Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
-                  </p>
-                  <p className="mt-2 font-medium text-gray-600">Status: <span className={`${apt.status === "pending" ? "text-yellow-500":"text-blue-500"}`}>{apt.status}</span></p>
-                  {apt.status === "pending" && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Waiting for service provider approval....
-                    </p>
-                  )}
+                  {apt.status === "pending" && <p className="mt-2 text-sm text-gray-500">Waiting for service provider approval....</p>}
                   {apt.status === "accepted" && (
                     <button
                       onClick={() => handleMakePayment(apt)}
@@ -667,17 +697,12 @@ export default function RehomerDashboard() {
                       Make payment
                     </button>
                   )}
-                  {apt.status === "declined" && (
-                    <p className="mt-2 text-sm text-red-600">
-                      Appointment Declined.
-                    </p>
-                  )}
+                  {apt.status === "declined" && <p className="mt-2 text-sm text-red-600">Appointment Declined.</p>}
                 </div>
               ))}
             </div>
           )}
         </div>
-
 
         {/* Upcoming Appointments Section */}
         <div className="mt-12 bg-white shadow rounded-xl p-8">
@@ -687,19 +712,100 @@ export default function RehomerDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {upcomingAppointments.map((apt) => (
-                <div key={apt.id} className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg">
-                  <p className="font-bold text-lg">
-                    {apt.service?.name || "Service info unavailable"}
-                  </p>
-                  <p className="mt-2 text-gray-700">
-                    Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}
-                  </p>
-                  <p className="mt-2 font-medium text-green-600">
-                    Status: {apt.status}
-                  </p>
+                <div
+                  key={apt.id}
+                  className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg"
+                >
+                  <p className="font-bold text-lg">{apt.service?.name || "Service info unavailable"}</p>
+                  <p className="mt-2 text-gray-700">Scheduled At: {new Date(apt.appointmentDate).toLocaleString()}</p>
+                  <p className="mt-2 font-medium text-green-600">Status: {apt.status}</p>
                   {/* Instead of invoice, show time remaining until appointment */}
                   <Countdown appointmentDate={apt.appointmentDate} />
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Completed Appointments Section */}
+        <div className="mt-12 bg-white shadow rounded-xl p-8">
+          <h2 className="text-2xl font-bold mb-4">Completed Appointments</h2>
+          {completedAppointments.length === 0 ? (
+            <p className="text-gray-600">No completed appointments.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {completedAppointments.map((apt) => (
+                <div
+                  key={apt.id}
+                  className="bg-gray-50 border rounded-lg p-6 transition-shadow hover:shadow-lg"
+                >
+                  <p className="font-bold text-lg">{apt.service?.name || "Service info unavailable"}</p>
+                  <p className="mt-2 text-gray-700">Completed At: {new Date(apt.appointmentDate).toLocaleString()}</p>
+                  <p className="mt-2 font-medium text-gray-600">Status: {apt.status}</p>
+
+                  {/* Add the "Rate and Review" button for completed appointments */}
+                  {apt.status.toLowerCase() === "completed" && (
+                    <button
+                      onClick={() => setSelectedAppointmentForReview(apt.id)}
+                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    >
+                      Rate and Review
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Review Form Modal */}
+        {selectedAppointmentForReview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">Leave a Review</h2>
+              <ReviewComponent
+                providerId={completedAppointments.find((apt) => apt.id === selectedAppointmentForReview)?.providerId || ""}
+                customerId={completedAppointments.find((apt) => apt.id === selectedAppointmentForReview)?.customerId || ""}
+                appointmentId={selectedAppointmentForReview}
+                serviceName={completedAppointments.find((apt) => apt.id === selectedAppointmentForReview)?.service?.name || "Unknown Service"}
+                editable={true}
+                onReviewCreated={handleReviewCreated}
+                onReviewUpdated={handleReviewUpdated}
+                onReviewDeleted={handleReviewDeleted}
+              />
+              <button
+                onClick={() => setSelectedAppointmentForReview(null)}
+                className="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* User Reviews Section */}
+        <div className="mt-12 bg-white shadow rounded-xl p-8">
+          <h2 className="text-2xl font-bold mb-4">Your Reviews</h2>
+          {isLoadingReviews ? (
+            <p className="text-gray-600">Loading your reviews...</p>
+          ) : userReviews.length === 0 ? (
+            <p className="text-gray-600">You haven't left any reviews yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {userReviews.map((review) => (
+                <ReviewComponent
+                  key={review.id}
+                  reviewId={review.id}
+                  initialRating={review.rating}
+                  initialComment={review.comment}
+                  providerId={review.providerId}
+                  customerId={review.customerId}
+                  appointmentId={review.appointmentId}
+                  editable={true}
+                  onReviewCreated={handleReviewCreated}
+                  onReviewUpdated={handleReviewUpdated}
+                  onReviewDeleted={handleReviewDeleted}
+                />
               ))}
             </div>
           )}
