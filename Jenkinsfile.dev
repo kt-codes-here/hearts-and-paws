@@ -166,6 +166,7 @@ pipeline {
     stage('Start Application') {
       steps {
         script {
+          echo "🏗️ Application hosted..."
           // bat """
           //   cd ${DEPLOY_DIR}
           //   taskkill /F /IM node.exe || echo "No running process found"
